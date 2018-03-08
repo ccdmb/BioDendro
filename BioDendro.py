@@ -1,3 +1,15 @@
+import numpy as np
+import matplotlib.pyplot as pyp
+import pandas as pd
+from PIL import Image
+import xlsxwriter
+import pickle
+import copy
+from scipy.sparse import bsr_matrix
+from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
+
+
+
 class Dendrogram:
     def __init__(self,file,min_d=0.8E-3,**args):
         '''
@@ -7,10 +19,14 @@ class Dendrogram:
         
         #Converts **args to self.variable
         tmp=copy.deepcopy(locals()) #Don't copy list to another list!
-        for each in tmp:
+        for each in args:
             if not "__" in each:
-                exec ("self."+each+"="+each)
-        myfile=pd.read_excel(file,sheetname=1) #pandas df that reads the file
+                exec ("self."+each+"="+str(args[each]))
+        if 'sheetname' in args:
+            myfile=pd.read_excel(file,sheetname=int(self.sheetname)) #pandas df that reads the file
+        else:
+            myfile=pd.read_excel(file)
+
         self.myfile=myfile
     
     def clusterize(self):
@@ -58,6 +74,7 @@ class Dendrogram:
             cnt+=1
         #clusters->starting points of clusters, new_col->cluster id
         #Compensate for the diff
+        myfile['labels']=list(new_col)
         self.myfile=myfile
         self.clusters=clusters
         self.new_col=new_col
@@ -65,3 +82,34 @@ class Dendrogram:
         self.col_names=col_names
         
         return myfile,clusters,new_col,cnt,col_names
+
+
+    def generate_linkage(self):
+        A=[]
+        cluster=dict()
+        cnt=0
+        max_val=np.max(self.myfile['labels'])+1
+        for each in self.myfile['sample']:
+            tmpval=each
+            loc=self.myfile['labels'].iloc[cnt]
+            if tmpval in cluster:
+                #if loc>10:
+                cluster[tmpval][loc]=True
+
+            else:
+                cluster[tmpval]=np.zeros(max_val,dtype=np.bool)
+                cluster[tmpval][loc]=False
+            A.append(tmpval)
+            cnt+=1
+        self.cluster=cluster
+        Full_matrix=np.zeros([len(cluster),max_val],dtype=np.bool)
+        cnt=0
+        mymax=0
+        for key in cluster:
+            Full_matrix[cnt,:]=cluster[key]
+            npsum=np.sum(cluster[key])
+            if npsum>mymax:
+                mymax=npsum
+            cnt+=1
+        self.full=Full_matrix
+        self.Z=linkage(self.full)
