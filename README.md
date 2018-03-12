@@ -9,9 +9,10 @@
 #Import BioDendro functions
 from BioDendro import *
 
-data=Dendrogram('sample.xlsx')
-myfile,clusters,new_col,mycnt,col_names=data.clusterize()
-
+data=Dendrogram('out.xlsx') #Load the data file
+data.clusterize() 
+data.generate_linkage() #takes long
+data.generate_out()  #plots and .txt saved to results
 
 ```
 
