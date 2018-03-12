@@ -83,6 +83,36 @@ class Dendrogram:
         
         return myfile,clusters,new_col,cnt,col_names
 
+    def pop_filled_matrices(self,matrix):
+        '''Returns the column ids that are similar'''
+        tmp=matrix.any(axis=0)
+        cnt=0
+        filled_indices=[]
+        for each in tmp:
+            if each:
+                filled_indices.append(cnt)
+            cnt+=1
+        return filled_indices
+    
+
+    def get_indices(self,tf,indices):
+            '''What are the index ids??'''
+            cnt=0
+            mylist=[]
+            total_cnt=0
+            for each in tf:
+                    if each:
+                            mylist.append(indices[cnt])
+                            total_cnt+=1
+                    cnt+=1
+            return mylist
+        
+
+    def plot_bins(self,inp,filename):
+        vals=np.sum(inp,axis=0)/len(inp)
+        pyp.clf()
+        pyp.bar(range(len(vals)),vals)
+        pyp.savefig(filename)
 
     def generate_linkage(self):
         A=[]
@@ -113,3 +143,24 @@ class Dendrogram:
             cnt+=1
         self.full=Full_matrix
         self.Z=linkage(self.full)
+        self.mycluster=fcluster(self.Z,5.0,criterion='distance')
+        
+    def generate_out(self):
+        cnt=0
+        colnames=pd.DataFrame(self.col_names)
+        for each in range(1,np.max(self.mycluster)-1):
+            tmp_indices=self.get_indices(self.mycluster==each,self.col_names)
+            with open("results/cluster_"+str(len(tmp_indices))+"_"
+                     +str(cnt)+".txt","a") as text_file:
+                tmp_mat=pd.DataFrame(self.full[self.mycluster==each])
+                myiloc=self.pop_filled_matrices(self.full[self.mycluster==each])
+                tmp_indices=self.get_indices(self.mycluster==each,self.col_names)
+                mytmp=pd.DataFrame(tmp_mat*1)
+                mytmp.index=tmp_indices
+                mytmp=mytmp.iloc[:,myiloc]
+                mytmp.columns=colnames.iloc[myiloc]
+                cluster_label="Cluster : "+str(cnt+1)+" Length : "+str(len(tmp_indices))+"\n"
+                text_file.write(cluster_label)
+                mytmp.to_csv(text_file,sep="\t")
+                data.plot_bins(mytmp,"results/Cluster_"+str(cnt)+".png")
+                cnt+=1
