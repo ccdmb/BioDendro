@@ -1,4 +1,4 @@
-# BioDendro - package to cluster genome data, and plot dendrograms
+# BioDendro - package to cluster analyte data, and plot dendrograms
 
 ## Background
 
