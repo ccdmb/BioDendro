@@ -89,7 +89,7 @@ class Dendrogram:
         cnt=0
         filled_indices=[]
         for each in tmp:
-            if each:
+            if (each and cnt<matrix.shape[1]-2):
                 filled_indices.append(cnt)
             cnt+=1
         return filled_indices
@@ -162,5 +162,5 @@ class Dendrogram:
                 cluster_label="Cluster : "+str(cnt+1)+" Length : "+str(len(tmp_indices))+"\n"
                 text_file.write(cluster_label)
                 mytmp.to_csv(text_file,sep="\t")
-                data.plot_bins(mytmp,"results/Cluster_"+str(cnt)+".png")
+                self.plot_bins(mytmp,"results/Cluster_"+str(cnt)+".png")
                 cnt+=1
