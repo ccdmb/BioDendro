@@ -80,6 +80,7 @@ class Dendrogram:
         self.new_col=new_col
         self.cnt=cnt
         self.col_names=col_names
+        self.indices=myfile['sample']
         
         return myfile,clusters,new_col,cnt,col_names
 
@@ -148,13 +149,13 @@ class Dendrogram:
     def generate_out(self):
         cnt=0
         colnames=pd.DataFrame(self.col_names)
-        for each in range(1,np.max(self.mycluster)-1):
-            tmp_indices=self.get_indices(self.mycluster==each,self.col_names)
+        for each in range(1,4):#:np.max(self.mycluster)-1):
+            tmp_indices=self.get_indices(self.mycluster==each,self.indices)
             with open("results/cluster_"+str(len(tmp_indices))+"_"
                      +str(cnt)+".txt","a") as text_file:
                 tmp_mat=pd.DataFrame(self.full[self.mycluster==each])
                 myiloc=self.pop_filled_matrices(self.full[self.mycluster==each])
-                tmp_indices=self.get_indices(self.mycluster==each,self.col_names)
+                tmp_indices=self.get_indices(self.mycluster==each,self.indices)
                 mytmp=pd.DataFrame(tmp_mat*1)
                 mytmp.index=tmp_indices
                 mytmp=mytmp.iloc[:,myiloc]
