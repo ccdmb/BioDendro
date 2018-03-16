@@ -149,7 +149,7 @@ class Dendrogram:
     def generate_out(self):
         cnt=0
         colnames=pd.DataFrame(self.col_names)
-        for each in range(1,4):#:np.max(self.mycluster)-1):
+        for each in range(1,np.max(self.mycluster)-1):
             tmp_indices=self.get_indices(self.mycluster==each,self.indices)
             with open("results/cluster_"+str(len(tmp_indices))+"_"
                      +str(cnt)+".txt","a") as text_file:
