@@ -23,5 +23,5 @@ plotly.offline.init_notebook_mode(connected=True) # for visualising plot inline
 plotly.offline.iplot(k,filename='simple_dendrogram')
 ```
 
-![Scheme](ward-cluster-d10.png "Clustering")
+![Scheme](cluster-d10.png "Clustering")
 
