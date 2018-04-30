@@ -328,7 +328,10 @@ class Dendrogram:
         else:
             myfile=pd.read_excel(file)
 
+        self.CUTOFF=5.0
         self.myfile=myfile
+        self.GL=False
+        self.CLUSTERIZE=False
     
     def clusterize(self):
         '''
@@ -388,6 +391,8 @@ class Dendrogram:
         self.GL=False #Generate Linkage
         self.GO=False #Generate output
         self.DENDRO=False #Check if dendro was created
+        self.CLUSTERIZE=True
+        self.LINKAGE=False
         #return myfile,clusters,new_col,cnt,col_names
 
     def pop_filled_matrices(self,matrix):
@@ -449,8 +454,10 @@ class Dendrogram:
                 mymax=npsum
             cnt+=1
         self.full=Full_matrix
-        self.Z=linkage(self.full)
-        self.mycluster=fcluster(self.Z,5.0,criterion='distance')
+        if not self.LINKAGE:
+            self.Z=linkage(self.full)
+            self.LINKAGE=True
+        self.mycluster=fcluster(self.Z,self.CUTOFF,criterion='distance')
         self.GL=True
         
     def generate_out(self):
@@ -475,12 +482,18 @@ class Dendrogram:
         self.GO=True
 
 
-    def visualize(self,x=900,y=600):
+    def visualize(self,cutoff=5.0,x=900,y=600):
     #Author: Paula
+        if not self.CUTOFF==cutoff:
+           self.GL=False
+        if not self.CLUSTERIZE:
+           self.clusterize()
+        if not self.GL:
+           self.generate_linkage()
         if self.GL==True: #Check whether linkage and outputs are generated
-            c,coph_dist=cophenet(self.Z,pdist(self.full))
-            rnames=list(self.indices)
-            self.dendro=create_dendro(self.full,labels=rnames,color_threshold=5.0)
-            self.dendro['layout'].update({'width':x, 'height':y, 'title':'Python plotly dendro', 'xaxis':{'title':'sample'}, 'yaxis':{'title':'distance'}, 'hovermode':'closest'})
-            self.dendro['data'].update({'hoverinfo':'all'})
+           c,coph_dist=cophenet(self.Z,pdist(self.full))
+           rnames=list(self.indices)
+           self.dendro=create_dendro(self.full,labels=rnames,color_threshold=cutoff)
+           self.dendro['layout'].update({'width':x, 'height':y, 'title':'Python plotly dendro', 'xaxis':{'title':'sample'}, 'yaxis':{'title':'distance'}, 'hovermode':'closest'})
+           self.dendro['data'].update({'hoverinfo':'all'})
         return self.dendro
