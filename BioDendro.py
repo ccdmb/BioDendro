@@ -31,8 +31,8 @@ scs = optional_imports.get_module('scipy.spatial')
 
 
 def create_dendro(X, orientation="bottom", labels=None,
-                      colorscale=None, distfun=None,
-                      linkagefun=lambda x: sch.linkage(x, 'complete'),
+                      colorscale=None, distfun=lambda x: scs.distance.pdist(x),
+                      linkagefun=lambda x: sch.linkage(x, method='complete'),
                       hovertext=None,color_threshold=None):
     """
     BETA function that returns a dendrogram Plotly figure object.
@@ -101,8 +101,8 @@ class _Dendrogram(object):
 
     def __init__(self, X, orientation='bottom', labels=None, colorscale=None,
                  width="100%", height="100%", xaxis='xaxis', yaxis='yaxis',
-                 distfun=None,
-                 linkagefun=lambda x: sch.linkage(x, 'complete'),
+                 distfun=lambda x: scs.distance.pdist(x),
+                 linkagefun=lambda x: sch.linkage(x, method='complete'), #testing!
                  hovertext=None,color_threshold=None):
         self.orientation = orientation
         self.labels = labels
@@ -379,9 +379,8 @@ class Dendrogram:
                                  '_'+str("%.4f"%np.around(np.max(tmp),4)))
 
             cnt+=1
-	#Check for consistency of labels #0, and #1 as diff condition requires that the first 
+        #Check for consistency of labels #0, and #1 as diff condition requires that the first 
         #label is sacrificed for binning.
-   
         #clusters->starting points of clusters, new_col->cluster id
         #Compensate for the diff
         myfile['labels']=list(new_col)
@@ -463,8 +462,9 @@ class Dendrogram:
             cnt+=1
         self.full=Full_matrix
         if not self.LINKAGE:
-        	self.Z=linkage(self.full)
-        	self.LINKAGE=True
+            self.Dis=pdist(self.full)
+            self.Z=linkage(self.Dis, method='complete')
+            self.LINKAGE=True
         self.mycluster=fcluster(self.Z,self.CUTOFF,criterion='distance')
         self.GL=True
         
@@ -500,10 +500,13 @@ class Dendrogram:
            self.clusterize()
         if not self.GL:
            self.generate_linkage()
+        if not self.GO:
+           self.generate_out()
         if self.GL==True: #Check whether linkage and outputs are generated
            c,coph_dist=cophenet(self.Z,pdist(self.full))
            rnames=list(self.indices)
            self.dendro=create_dendro(self.full,labels=rnames,color_threshold=cutoff)
            self.dendro['layout'].update({'width':x, 'height':y, 'title':'Python plotly dendro', 'xaxis':{'title':'sample'}, 'yaxis':{'title':'distance'}, 'hovermode':'closest'})
            self.dendro['data'].update({'hoverinfo':'all'})
+           plotly.offline.plot(self.dendro,filename='simple_dendrogram.html')
         return self.dendro
