@@ -31,8 +31,8 @@ scs = optional_imports.get_module('scipy.spatial')
 
 
 def create_dendro(X, orientation="bottom", labels=None,
-                      colorscale=None, distfun=None,
-                      linkagefun=lambda x: sch.linkage(x, 'complete'),
+                      colorscale=None, distfun=lambda x: scs.distance.pdist(x),
+                      linkagefun=lambda x: sch.linkage(x, method='complete'),
                       hovertext=None,color_threshold=None):
     """
     BETA function that returns a dendrogram Plotly figure object.
@@ -101,8 +101,8 @@ class _Dendrogram(object):
 
     def __init__(self, X, orientation='bottom', labels=None, colorscale=None,
                  width="100%", height="100%", xaxis='xaxis', yaxis='yaxis',
-                 distfun=None,
-                 linkagefun=lambda x: sch.linkage(x, 'complete'),
+                 distfun=lambda x: scs.distance.pdist(x),
+                 linkagefun=lambda x: sch.linkage(x, method='complete'), #testing!
                  hovertext=None,color_threshold=None):
         self.orientation = orientation
         self.labels = labels
@@ -356,12 +356,15 @@ class Dendrogram:
         #The routine below generates 
         for each in clusters:
             if cnt==1:
-                new_col[0:clusters[cnt]]=cnt
-                tmp=myfile['mz'][0:clusters[cnt]]
-                col_names.append(str("%.4f"%np.around(np.mean(tmp),4))+
-                                 '_'+str("%.4f"%np.around(np.min(tmp),4))+
-                                 '_'+str("%.4f"%np.around(np.max(tmp),4)))
-                #col_names.append(str(np.mean(myfile['mz']))+'_'+str(np.std(inp))+'_'+str(np.min(inp))+'_'+str(np.max(inp))clust)
+                for tmp_cnt in range(cnt-1,cnt+1):
+                    new_col[0:clusters[tmp_cnt]+1]=cnt
+                    if clusters[tmp_cnt]!=0:
+                        tmp=myfile['mz'][0:clusters[tmp_cnt]+1]
+                    else:
+                        tmp=myfile['mz'][0]
+                    col_names.append(str("%.4f"%np.around(np.mean(tmp),4))+
+                                      '_'+str("%.4f"%np.around(np.min(tmp),4))+
+                                      '_'+str("%.4f"%np.around(np.max(tmp),4)))
             elif cnt==len(clusters):
                 new_col[clusters[cnt-1]:]=cnt
                 tmp=myfile['mz'][clusters[cnt-1]:]
@@ -376,6 +379,8 @@ class Dendrogram:
                                  '_'+str("%.4f"%np.around(np.max(tmp),4)))
 
             cnt+=1
+        #Check for consistency of labels #0, and #1 as diff condition requires that the first 
+        #label is sacrificed for binning.
         #clusters->starting points of clusters, new_col->cluster id
         #Compensate for the diff
         myfile['labels']=list(new_col)
@@ -404,7 +409,7 @@ class Dendrogram:
             if (each and cnt<matrix.shape[1]-2):
                 filled_indices.append(cnt)
             cnt+=1
-        #return filled_indices
+        return filled_indices
     
 
     def get_indices(self,tf,indices):
@@ -413,7 +418,7 @@ class Dendrogram:
             mylist=[]
             total_cnt=0
             for each in tf:
-                    if each:
+                    if each :
                             mylist.append(indices[cnt])
                             total_cnt+=1
                     cnt+=1
@@ -447,15 +452,18 @@ class Dendrogram:
         Full_matrix=np.zeros([len(cluster),max_val],dtype=np.bool)
         cnt=0
         mymax=0
+        self.labels=[]
         for key in cluster:
             Full_matrix[cnt,:]=cluster[key]
+            self.labels.append(key)
             npsum=np.sum(cluster[key])
             if npsum>mymax:
                 mymax=npsum
             cnt+=1
         self.full=Full_matrix
         if not self.LINKAGE:
-            self.Z=linkage(self.full)
+            self.Dis=pdist(self.full)
+            self.Z=linkage(self.Dis, method='complete')
             self.LINKAGE=True
         self.mycluster=fcluster(self.Z,self.CUTOFF,criterion='distance')
         self.GL=True
@@ -463,13 +471,14 @@ class Dendrogram:
     def generate_out(self):
         cnt=0
         colnames=pd.DataFrame(self.col_names)
-        for each in range(1,np.max(self.mycluster)-1):
+        for each in range(np.max(self.mycluster)+1):
+        #for each in range(1,np.max(self.mycluster)-1):
             tmp_indices=self.get_indices(self.mycluster==each,self.indices)
             with open("results/cluster_"+str(len(tmp_indices))+"_"
                      +str(cnt)+".txt","a") as text_file:
                 tmp_mat=pd.DataFrame(self.full[self.mycluster==each])
                 myiloc=self.pop_filled_matrices(self.full[self.mycluster==each])
-                tmp_indices=self.get_indices(self.mycluster==each,self.indices)
+                tmp_indices=self.get_indices(self.mycluster==each,self.labels)
                 mytmp=pd.DataFrame(tmp_mat*1)
                 mytmp.index=tmp_indices
                 mytmp=mytmp.iloc[:,myiloc]
@@ -479,6 +488,7 @@ class Dendrogram:
                 mytmp.to_csv(text_file,sep="\t")
                 self.plot_bins(mytmp,"results/Cluster_"+str(cnt)+".png")
                 cnt+=1
+        print (cnt)
         self.GO=True
 
 
@@ -490,10 +500,13 @@ class Dendrogram:
            self.clusterize()
         if not self.GL:
            self.generate_linkage()
+        if not self.GO:
+           self.generate_out()
         if self.GL==True: #Check whether linkage and outputs are generated
            c,coph_dist=cophenet(self.Z,pdist(self.full))
            rnames=list(self.indices)
            self.dendro=create_dendro(self.full,labels=rnames,color_threshold=cutoff)
            self.dendro['layout'].update({'width':x, 'height':y, 'title':'Python plotly dendro', 'xaxis':{'title':'sample'}, 'yaxis':{'title':'distance'}, 'hovermode':'closest'})
            self.dendro['data'].update({'hoverinfo':'all'})
+           plotly.offline.plot(self.dendro,filename='simple_dendrogram.html')
         return self.dendro
