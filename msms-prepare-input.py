@@ -4,7 +4,7 @@
 #Inputs: <input1>.mgf and <input1>.csv text files
 #Ouputs: <msms_nonredundant_list>.txt 
 
-import sys, getopt
+import sys, argparse
 from collections import defaultdict
 import xlsxwriter, csv
 import operator
@@ -75,7 +75,7 @@ def get_csv_record(lines2, rec):
 
 # Selects the closest trigger mass to the real sample mass 
 # Prints the best trigger id and ion list 
-def remove_redundancy(ndic):
+def remove_redundancy(ndic, negloss):
    tmpdic ={}
    for cpkey in ndic: # for each real sample id
        km = cpkey.split("_")
@@ -96,8 +96,10 @@ def remove_redundancy(ndic):
                tm = bestion.split("_")
                tm[3] = tm[3].strip('m/z')
                for ion1 in one: # foreach ion
-                   ion1 = ion1.strip()
-                   #ion1 = round(float(ion1)-float(tm[3]),5) # get neutral
+                   if negloss:
+                      ion1 = round(float(ion1)-float(tm[3]),5) # get negative loss
+                   else: #options
+                      ion1 = ion1.strip()
                    ion1 = float(ion1)
                    fele = bestion,ion1
                    tmpdic[fele] = cpkey
@@ -117,8 +119,10 @@ def remove_redundancy(ndic):
                bestlab = best[0].strip() # get trigger label
                btm = bestlab.split("_") # get trigger id (QE..)
                btm[3] = btm[3].strip('m/z')
-               #bion1 = round(float(bion1)-float(btm[3]),5) # get neutral loss
-               bion1 = float(bion1)
+               if negloss:
+                  bion1 = round(float(bion1)-float(btm[3]),5) # get negative loss
+               else:
+                  bion1 = float(bion1)
                fele1 = bestlab,bion1
                tmpdic[fele1] = cpkey
                
@@ -144,34 +148,31 @@ def remove_redundancy(ndic):
 def main(argv):
    inputfile1 = ''
    inputfile2 = ''
-   try:
-      opts, args = getopt.getopt(sys.argv[1:],"hi:j:",["ifile=","jfile="])
-   except getopt.GetoptError as err:
-      print('read_in_file.py -i <inputfile MSMS> -j <inputfile csv> > outfile: ', err)
-      sys.exit(1)
-   for opt, arg in opts:
-      if opt == '-h':
-         print('read_in_file.py -i <inputfile> -j <inputfile csv> > outputfile')
-         sys.exit()
-      elif opt in ("-i", "--ifile"):
-         inputfile1 = arg
-      elif opt in ("-j", "--jfile"):
-         inputfile2 = arg
+
+   parser = argparse.ArgumentParser()
+   parser.add_argument("file1", help="Please use a MGF file (file1.mgf)", type=str)    
+   parser.add_argument("file2", help="Please use a file of components listed (file2.txt)", type=str)
+
+   parser.add_argument("-n","--negative", help="You are applying negative loss", action="store_true")
+   args = parser.parse_args()
+
+   print(args.file1, args.file2, args.negative)
 
 
    #Open the trigger data <file>.msg
-   f_in = open(inputfile1, 'r')
+   f_in = open(args.file1, 'r')
    lines = filter(None, (line.rstrip() for line in f_in)) 
    
    rec = get_record(lines)
 
    #Open the sample list <file>.csv
-   f2_in = open(inputfile2, 'r')
+   f2_in = open(args.file2, 'r')
    lines2 = filter(None, (line2.rstrip() for line2 in f2_in))  
    ndic = get_csv_record(lines2, rec)
 
+   negloss = args.negative
    #Now remove redundancy and print best trigger ion list
-   remove_redundancy(ndic)
+   remove_redundancy(ndic, negloss)
 
    # get an excel file too
    pd.read_csv("out.csv", delimiter="\t").to_excel("out.xlsx", index=False)
