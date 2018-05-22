@@ -390,6 +390,7 @@ class Dendrogram:
         self.cnt=cnt
         self.col_names=col_names
         self.indices=myfile['sample']
+	self.full_df=""  #DataFrame with bin ids as columns and records as rows
         
 
         #Flags set to see to check and see what functions are executed
@@ -467,6 +468,18 @@ class Dendrogram:
             self.LINKAGE=True
         self.mycluster=fcluster(self.Z,self.CUTOFF,criterion='distance')
         self.GL=True
+
+
+    def write_full_matrix(self,filename="full_matrix.xlsx"):
+	if self.GL==True:
+        	df=pd.DataFrame(self.full*1)
+        	df.columns=self.col_names
+        	df['index']=self.labels
+        	df.set_index(['index'])
+        	excel_writer=pd.ExcelWriter(filename)
+        	df.to_excel(excel_writer,'Sheet 1')
+		self.full_df=df
+
         
     def generate_out(self):
         cnt=0
