@@ -13,6 +13,7 @@ import plotly
 from plotly.graph_objs import Scatter, Layout
 from scipy.cluster.hierarchy import cophenet
 from scipy.spatial.distance import pdist
+from sklearn.metrics.pairwise import pairwise_distances
 
 
 
@@ -390,7 +391,7 @@ class Dendrogram:
         self.cnt=cnt
         self.col_names=col_names
         self.indices=myfile['sample']
-	self.full_df=""  #DataFrame with bin ids as columns and records as rows
+        self.full_df=""  #DataFrame with bin ids as columns and records as rows
         
 
         #Flags set to see to check and see what functions are executed
@@ -438,16 +439,11 @@ class Dendrogram:
         cnt=0
         max_val=np.max(self.myfile['labels'])+1
         for each in self.myfile['sample']:
-            tmpval=each
             loc=self.myfile['labels'].iloc[cnt]
-            if tmpval in cluster:
-                #if loc>10:
-                cluster[tmpval][loc]=True
-
-            else:
-                cluster[tmpval]=np.zeros(max_val,dtype=np.bool)
-                cluster[tmpval][loc]=False
-            A.append(tmpval)
+            if not each in cluster:
+                cluster[each]=np.zeros(max_val,dtype=np.bool)
+            cluster[each][loc]=True
+            A.append(each)
             cnt+=1
         self.cluster=cluster
         Full_matrix=np.zeros([len(cluster),max_val],dtype=np.bool)
@@ -461,24 +457,24 @@ class Dendrogram:
             if npsum>mymax:
                 mymax=npsum
             cnt+=1
-        self.full=Full_matrix
+        self.full=Full_matrix[:,1:]
         if not self.LINKAGE:
-            self.Dis=pdist(self.full)
-            self.Z=linkage(self.Dis, method='complete')
+            self.Dis=pairwise_distances(self.full,metric='jaccard')
+            self.Z=linkage(self.Dis)
             self.LINKAGE=True
-        self.mycluster=fcluster(self.Z,self.CUTOFF,criterion='distance')
+        self.mycluster=fcluster(self.Z,0.5,criterion='distance')
         self.GL=True
 
 
     def write_full_matrix(self,filename="full_matrix.xlsx"):
-	if self.GL==True:
-        	df=pd.DataFrame(self.full*1)
-        	df.columns=self.col_names
-        	df['index']=self.labels
-        	df.set_index(['index'])
-        	excel_writer=pd.ExcelWriter(filename)
-        	df.to_excel(excel_writer,'Sheet 1')
-		self.full_df=df
+        if self.GL==True:
+            df=pd.DataFrame(self.full*1)
+            df.columns=self.col_names
+            df['index']=self.labels
+            df.set_index(['index'])
+            excel_writer=pd.ExcelWriter(filename)
+            df.to_excel(excel_writer,'Sheet 1')
+            self.full_df=df
 
         
     def generate_out(self):
