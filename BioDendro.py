@@ -338,8 +338,8 @@ class Dendrogram:
         '''
         Clusters based on a metric passed as input. Defaults are based on data in the
         test csv file
-        Input: csv
-        Outputs: 
+        Input: csv, bin_threshold=0.8E-3 
+        Outputs: binned list is stored in self['labels']
         '''
         #Default parameters - column name, sheet name, minimum distance to cluster
         colname='mz' #Look for a particular column to cluster
@@ -400,6 +400,7 @@ class Dendrogram:
         self.DENDRO=False #Check if dendro was created
         self.CLUSTERIZE=True
         self.LINKAGE=False
+        self.clustering_method='jaccard'
         #return myfile,clusters,new_col,cnt,col_names
 
     def pop_filled_matrices(self,matrix):
@@ -433,7 +434,13 @@ class Dendrogram:
         pyp.bar(range(len(vals)),vals)
         pyp.savefig(filename)
 
-    def generate_linkage(self,cutoff):
+    def generate_linkage(self,cutoff=0.5,clustering_method='jaccard'):
+        '''
+        Populates self.mycluster and self.full by filling in the full linkage (self.full)
+        and the individual clusters (mycluster)
+        In: cutoff=0.5,clustering_method='jaccard'
+        '''
+        print ("Please be patient..It may take a while to compute..")
         A=[]
         cluster=dict()
         cnt=0
@@ -458,26 +465,26 @@ class Dendrogram:
                 mymax=npsum
             cnt+=1
         self.full=Full_matrix[:,1:]
-        self.write_full_matrix()
+        self.clustering_method=clustering_method
+        self.write_full_matrix(write_to_file=False)
         if not self.LINKAGE:
-            #self.Dis=pairwise_distances(self.full,metric='jaccard')
-            self.Z=linkage(self.full, method='complete', metric='jaccard')#added complete
+            self.Z=linkage(self.full, method='complete', metric=self.clustering_method)#added complete
             self.LINKAGE=True
         self.mycluster=fcluster(self.Z,cutoff,criterion='distance')
         #self.mycluster=fcluster(self.Z,cutoff)
         self.GL=True
 
 
-    def write_full_matrix(self,filename="full_matrix.xlsx"):
-        #if self.GL==False:
-        df=pd.DataFrame(self.full*1)
-        df.columns=self.col_names[1:]
-        df.index=self.labels
-        #df['index']=self.labels
-        #df.set_index(['index'])
-        excel_writer=pd.ExcelWriter(filename)
-        df.to_excel(excel_writer,'Sheet 1')
-        self.full_df=df
+    def write_full_matrix(self,filename="full_matrix.xlsx",write_to_file=True):
+        if self.GL==False:
+            df=pd.DataFrame(self.full*1)
+            df.columns=self.col_names[1:]
+            df.index=self.labels
+            if write_to_file:
+                excel_writer=pd.ExcelWriter(filename)
+                df.to_excel(excel_writer,'Sheet 1')
+            self.full_df=df
+
 
         
     def generate_out(self):
@@ -498,7 +505,6 @@ class Dendrogram:
                 mytmp.to_csv(text_file,sep="\t")
                 self.plot_bins(mytmp,"results/Cluster_"+str(cnt)+".png")
                 cnt+=1
-        print (cnt)
         self.GO=True
 
 
@@ -515,7 +521,7 @@ class Dendrogram:
         if self.GL==True: #Check whether linkage and outputs are generated
            #c,coph_dist=cophenet(self.Z,pdist(self.full))
            rnames=list(self.full_df.index) # paula changed _df.index from full.indices
-           self.dendro=create_dendro(self.full,labels=rnames,color_threshold=cutoff) # Paula changed _df
+           self.dendro=create_dendro(self.full,labels=rnames,distfun=lambda x: scs.distance.pdist(x, metric=self.clustering_method),color_threshold=cutoff) # Paula changed _df
            self.dendro['layout'].update({'width':x, 'height':y, 'title':'Python plotly dendro', 'xaxis':{'title':'sample'}, 'yaxis':{'title':'distance'}, 'hovermode':'closest'})
            self.dendro['data'].update({'hoverinfo':'all'})
            plotly.offline.plot(self.dendro,filename='simple_dendrogram.html')
