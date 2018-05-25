@@ -19,7 +19,7 @@ msms-prepare-input.py -i MSMS_CAT.mgf -j component_list_from_12CVs.txt
 from BioDendro import *
 
 data=Dendrogram('out.xlsx') #Load the data file
-k=data.visualize(cutoff=5.0) # Set cluster distance 
+k=data.visualize(cutoff=0.5) # Set cluster distance 
 ```
 ### To visualise a plot inline
 ```
