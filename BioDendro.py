@@ -14,15 +14,23 @@ from plotly.graph_objs import Scatter, Layout
 from scipy.cluster.hierarchy import cophenet
 from scipy.spatial.distance import pdist
 from sklearn.metrics.pairwise import pairwise_distances
-
-
-
-
-
+import os
 from collections import OrderedDict
 
 from plotly import exceptions, optional_imports
 from plotly.graph_objs import graph_objs
+
+def createFolder(directory):
+    '''
+    # Example createFolder('./results')
+    '''
+    try:
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+    except OSError:
+        print ('Error: Creating directory. ' +  directory)
+        
+
 
 # Optional imports, may be None for users that only use our core functionality.
 np = optional_imports.get_module('numpy')
@@ -510,6 +518,7 @@ class Dendrogram:
 
     def visualize(self,cutoff=5.0,x=900,y=400):
     #Author: Paula
+        createFolder('./results')
         if not self.CUTOFF==cutoff:
            self.GL=False
         if not self.CLUSTERIZE:
