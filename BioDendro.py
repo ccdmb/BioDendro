@@ -32,7 +32,7 @@ scs = optional_imports.get_module('scipy.spatial')
 
 
 def create_dendro(X, orientation="bottom", labels=None,
-                      colorscale=None, distfun=lambda x: scs.distance.pdist(x),
+                      colorscale=None, distfun=lambda x: scs.distance.pdist(x, metric='jaccard'),# Added jaccard
                       linkagefun=lambda x: sch.linkage(x, method='complete'),
                       hovertext=None,color_threshold=None):
     """
@@ -102,7 +102,7 @@ class _Dendrogram(object):
 
     def __init__(self, X, orientation='bottom', labels=None, colorscale=None,
                  width="100%", height="100%", xaxis='xaxis', yaxis='yaxis',
-                 distfun=lambda x: scs.distance.pdist(x),
+                 distfun=lambda x: scs.distance.pdist(x, metric='jaccard'), #testing jaccard!
                  linkagefun=lambda x: sch.linkage(x, method='complete'), #testing!
                  hovertext=None,color_threshold=None):
         self.orientation = orientation
@@ -255,8 +255,8 @@ class _Dendrogram(object):
                 appear on the plot
             (e) P['leaves']: left-to-right traversal of the leaves
         """
-        d = distfun(X)
-        Z = linkagefun(d)
+        d = distfun(X) # added jaccardi failed unexpected keyword
+        Z = linkagefun(d) #<lambda>() got an unexpected keyword argument 'method'
         P = sch.dendrogram(Z, orientation=self.orientation,
                            labels=self.labels, no_plot=True,color_threshold=color_threshold)
 
@@ -409,7 +409,7 @@ class Dendrogram:
         filled_indices=[]
         for each in tmp:
             if (each and cnt<matrix.shape[1]-2):
-                filled_indices.append(cnt)
+                filled_indices.append(cnt) #Paula added 1 bins out of sink in individual plots
             cnt+=1
         return filled_indices
     
@@ -433,7 +433,7 @@ class Dendrogram:
         pyp.bar(range(len(vals)),vals)
         pyp.savefig(filename)
 
-    def generate_linkage(self):
+    def generate_linkage(self,cutoff):
         A=[]
         cluster=dict()
         cnt=0
@@ -458,41 +458,42 @@ class Dendrogram:
                 mymax=npsum
             cnt+=1
         self.full=Full_matrix[:,1:]
+        self.write_full_matrix()
         if not self.LINKAGE:
-            self.Dis=pairwise_distances(self.full,metric='jaccard')
-            self.Z=linkage(self.Dis)
+            #self.Dis=pairwise_distances(self.full,metric='jaccard')
+            self.Z=linkage(self.full, method='complete', metric='jaccard')#added complete
             self.LINKAGE=True
-        self.mycluster=fcluster(self.Z,0.5,criterion='distance')
+        self.mycluster=fcluster(self.Z,cutoff,criterion='distance')
+        #self.mycluster=fcluster(self.Z,cutoff)
         self.GL=True
 
 
     def write_full_matrix(self,filename="full_matrix.xlsx"):
-        if self.GL==True:
-            df=pd.DataFrame(self.full*1)
-            df.columns=self.col_names
-            df['index']=self.labels
-            df.set_index(['index'])
-            excel_writer=pd.ExcelWriter(filename)
-            df.to_excel(excel_writer,'Sheet 1')
-            self.full_df=df
+        #if self.GL==False:
+        df=pd.DataFrame(self.full*1)
+        df.columns=self.col_names[1:]
+        df.index=self.labels
+        #df['index']=self.labels
+        #df.set_index(['index'])
+        excel_writer=pd.ExcelWriter(filename)
+        df.to_excel(excel_writer,'Sheet 1')
+        self.full_df=df
 
         
     def generate_out(self):
-        cnt=0
-        colnames=pd.DataFrame(self.col_names)
-        for each in range(np.max(self.mycluster)+1):
-        #for each in range(1,np.max(self.mycluster)-1):
-            tmp_indices=self.get_indices(self.mycluster==each,self.indices)
+        cnt=1 # add 1
+        colnames=pd.DataFrame(self.col_names[1:])
+        for each in range(1,np.max(self.mycluster)+1):
+            tmp_indices=self.get_indices(self.mycluster==each,self.labels)
             with open("results/cluster_"+str(len(tmp_indices))+"_"
                      +str(cnt)+".txt","a") as text_file:
                 tmp_mat=pd.DataFrame(self.full[self.mycluster==each])
                 myiloc=self.pop_filled_matrices(self.full[self.mycluster==each])
-                tmp_indices=self.get_indices(self.mycluster==each,self.labels)
                 mytmp=pd.DataFrame(tmp_mat*1)
                 mytmp.index=tmp_indices
                 mytmp=mytmp.iloc[:,myiloc]
                 mytmp.columns=colnames.iloc[myiloc]
-                cluster_label="Cluster : "+str(cnt+1)+" Length : "+str(len(tmp_indices))+"\n"
+                cluster_label="Cluster : "+str(cnt)+" Length : "+str(len(tmp_indices))+"\n"# Paula changed drop 1
                 text_file.write(cluster_label)
                 mytmp.to_csv(text_file,sep="\t")
                 self.plot_bins(mytmp,"results/Cluster_"+str(cnt)+".png")
@@ -501,20 +502,20 @@ class Dendrogram:
         self.GO=True
 
 
-    def visualize(self,cutoff=5.0,x=900,y=600):
+    def visualize(self,cutoff=5.0,x=900,y=400):
     #Author: Paula
         if not self.CUTOFF==cutoff:
            self.GL=False
         if not self.CLUSTERIZE:
            self.clusterize()
         if not self.GL:
-           self.generate_linkage()
+           self.generate_linkage(cutoff=cutoff)
         if not self.GO:
            self.generate_out()
         if self.GL==True: #Check whether linkage and outputs are generated
-           c,coph_dist=cophenet(self.Z,pdist(self.full))
-           rnames=list(self.indices)
-           self.dendro=create_dendro(self.full,labels=rnames,color_threshold=cutoff)
+           #c,coph_dist=cophenet(self.Z,pdist(self.full))
+           rnames=list(self.full_df.index) # paula changed _df.index from full.indices
+           self.dendro=create_dendro(self.full,labels=rnames,color_threshold=cutoff) # Paula changed _df
            self.dendro['layout'].update({'width':x, 'height':y, 'title':'Python plotly dendro', 'xaxis':{'title':'sample'}, 'yaxis':{'title':'distance'}, 'hovermode':'closest'})
            self.dendro['data'].update({'hoverinfo':'all'})
            plotly.offline.plot(self.dendro,filename='simple_dendrogram.html')
