@@ -334,7 +334,7 @@ class Dendrogram:
         self.GL=False
         self.CLUSTERIZE=False
     
-    def clusterize(self):
+    def clusterize(self,bin_threshold=0.8E-3):
         '''
         Clusters based on a metric passed as input. Defaults are based on data in the
         test csv file
@@ -344,7 +344,7 @@ class Dendrogram:
         #Default parameters - column name, sheet name, minimum distance to cluster
         colname='mz' #Look for a particular column to cluster
         sheetname=1 #Which sheet in the notebook?
-        min_d=0.8E-3 #Cluster cutoff used
+        min_d=bin_threshold #Cluster cutoff used
         myfile=self.myfile
         clusters=[]
         clusters.append(0)
