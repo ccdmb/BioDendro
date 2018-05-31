@@ -45,9 +45,9 @@ data.clusterize(bin_threshold=0.8E-3)
 ```
 
 ### Sample linkage and clustering
-
+Options are "jaccard" or "braycurtis"
 ```
-data.generate_linkage(self,cutoff=0.5,clustering_method='jaccard')
+data.generate_linkage(cutoff=0.5,clustering_method='jaccard')
 ```
 
 ### Analysis results and visualization
