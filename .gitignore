@@ -1,0 +1,6 @@
+env
+**/__pycache__
+.eggs
+.ipynb_checkpoints
+
+BioDendro.egg-info/

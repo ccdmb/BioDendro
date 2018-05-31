@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 #Author: P Moolhuijzen
 #Date  : 26 February 2018
 #Inputs: <input1>.mgf and <input1>.csv text files
@@ -12,6 +13,7 @@ import xlsxwriter
 import csv
 import operator
 import pandas as pd
+
 
 def get_record(lines):
     """ Make a dictionary key pepmass-retention-time
@@ -155,10 +157,15 @@ def remove_redundancy(ndic, negloss):
 
     # Return the table, sorted by mz
     # Columns are (sample, mz)
-    return sorted(alist, key=lambda x: x[1])
+
+    #Now remove redundancy and print best trigger ion list
+
+    table = pd.DataFrame(alist, columns=['sample', 'mz'])
+    table.sort_values(by='mz', inplace=True)
+    return table
 
 
-def main(argv):
+def main():
 
     parser = argparse.ArgumentParser(
         description="Process MGF file into appropriate input for biodendro."
@@ -204,10 +211,7 @@ def main(argv):
     negloss = args.negative
 
     #Now remove redundancy and print best trigger ion list
-    table_header = ['sample', 'mz']
     table = remove_redundancy(ndic, negloss)
-
-    table = pd.DataFrame(table, columns=table_header)
 
     table.to_csv(args.output, sep="\t", index=False)
 
@@ -216,4 +220,4 @@ def main(argv):
     table.to_excel(xlsx_path, index=False)
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    main()

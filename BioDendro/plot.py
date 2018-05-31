@@ -1,48 +1,58 @@
-
-import matplotlib.pyplot as pyp
-import pandas as pd
-from PIL import Image
-import xlsxwriter
-import pickle
-import copy
-from scipy.sparse import bsr_matrix
-from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
-from plotly.graph_objs import graph_objs
-import plotly.figure_factory as ff
-import plotly
-from plotly.graph_objs import Scatter, Layout
-from scipy.cluster.hierarchy import cophenet
-from scipy.spatial.distance import pdist
-from sklearn.metrics.pairwise import pairwise_distances
 import os
 from collections import OrderedDict
+import pickle
+import copy
 
+from PIL import Image
+import xlsxwriter
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as pyp
+
+import scipy as scp # Non-idiomatic alias for plotly compat
+from scipy.cluster import hierarchy as sch
+from scipy import spatial as scs
+from scipy.sparse import bsr_matrix
+from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
+from scipy.cluster.hierarchy import cophenet
+from scipy.spatial.distance import pdist
+
+from sklearn.metrics.pairwise import pairwise_distances
+
+import plotly
+import plotly.figure_factory as ff
+from plotly.graph_objs import Scatter, Layout
+from plotly.graph_objs import graph_objs
 from plotly import exceptions, optional_imports
 from plotly.graph_objs import graph_objs
 
+
+
+
+# Optional imports, may be None for users that only use our core functionality.
+
+
 def createFolder(directory):
-    '''
-    # Example createFolder('./results')
-    '''
+    ''' Example createFolder('./results') '''
+
     try:
         if not os.path.exists(directory):
             os.makedirs(directory)
     except OSError:
         print ('Error: Creating directory. ' +  directory)
-        
 
 
-# Optional imports, may be None for users that only use our core functionality.
-np = optional_imports.get_module('numpy')
-scp = optional_imports.get_module('scipy')
-sch = optional_imports.get_module('scipy.cluster.hierarchy')
-scs = optional_imports.get_module('scipy.spatial')
-
-
-def create_dendro(X, orientation="bottom", labels=None,
-                      colorscale=None, distfun=lambda x: scs.distance.pdist(x, metric='jaccard'),# Added jaccard
-                      linkagefun=lambda x: sch.linkage(x, method='complete'),
-                      hovertext=None,color_threshold=None):
+def create_dendro(
+        X,
+        orientation="bottom",
+        labels=None,
+        colorscale=None,
+        distfun=lambda x: scs.distance.pdist(x, metric='jaccard'), # Added jaccard
+        linkagefun=lambda x: sch.linkage(x, method='complete'),
+        hovertext=None,
+        color_threshold=None
+        ):
     """
     BETA function that returns a dendrogram Plotly figure object.
     :param (ndarray) X: Matrix of observations as array of arrays
@@ -321,28 +331,32 @@ class _Dendrogram(object):
 
 
 class Dendrogram:
-    def __init__(self,file,min_d=0.8E-3,**args):
+    def __init__(self, file, min_d=0.8E-3, **args):
         '''
-        Initializes BioDendro - package used to cluster and plot dendrograms
-    
+        Initializes BioDendro - package used to cluster and plot get_dendrogram_traces
         '''
-        
+
         #Converts **args to self.variable
-        tmp=copy.deepcopy(locals()) #Don't copy list to another list!
+        tmp = copy.deepcopy(locals()) #Don't copy list to another list!
         for each in args:
             if not "__" in each:
-                exec ("self."+each+"="+str(args[each]))
-        if 'sheetname' in args:
-            myfile=pd.read_excel(file,sheetname=int(self.sheetname)) #pandas df that reads the file
-        else:
-            myfile=pd.read_excel(file)
+                setattr(self, each, args[each])
+                #exec ("self." + each + "=" + str(args[each]))
 
-        self.CUTOFF=5.0
-        self.myfile=myfile
-        self.GL=False
-        self.CLUSTERIZE=False
-    
-    def clusterize(self,bin_threshold=0.8E-3):
+        if 'sheetname' in args:
+            myfile = pd.read_excel(
+                file,
+                sheetname=int(self.sheetname)
+                ) #pandas df that reads the file
+        else:
+            myfile = pd.read_excel(file)
+
+        self.CUTOFF = 5.0
+        self.myfile = myfile
+        self.GL = False
+        self.CLUSTERIZE = False
+
+    def clusterize(self, bin_threshold=0.8E-3):
         '''
         Clusters based on a metric passed as input. Defaults are based on data in the
         test csv file
@@ -350,188 +364,223 @@ class Dendrogram:
         Outputs: binned list is stored in self['labels']
         '''
         #Default parameters - column name, sheet name, minimum distance to cluster
-        colname='mz' #Look for a particular column to cluster
-        sheetname=1 #Which sheet in the notebook?
-        min_d=bin_threshold #Cluster cutoff used
-        myfile=self.myfile
-        clusters=[]
+        colname = 'mz' #Look for a particular column to cluster
+        sheetname = 1 #Which sheet in the notebook?
+        min_d = bin_threshold #Cluster cutoff used
+        myfile = self.myfile
+        clusters = []
         clusters.append(0)
-        clusters=list(myfile[myfile[colname].diff()>=min_d].index) #Label based on cluster cutoff
-        myfile['labels']=0
-        cnt=1
-        col_names=[]
-        new_col=np.zeros(len(myfile),dtype=np.int)
-        clusters.insert(0,0)
+        clusters = list(myfile[myfile[colname].diff() >= min_d].index) #Label based on cluster cutoff
+        myfile['labels'] = 0
+        cnt = 1
+        col_names = []
+        new_col = np.zeros(len(myfile), dtype=np.int)
+        clusters.insert(0, 0)
+
         #The routine below generates 
         for each in clusters:
-            if cnt==1:
-                for tmp_cnt in range(cnt-1,cnt+1):
-                    new_col[0:clusters[tmp_cnt]+1]=cnt
-                    if clusters[tmp_cnt]!=0:
-                        tmp=myfile['mz'][0:clusters[tmp_cnt]+1]
+            if cnt == 1:
+                for tmp_cnt in range(cnt - 1, cnt + 1):
+                    new_col[0:clusters[tmp_cnt] + 1] = cnt
+                    if clusters[tmp_cnt] != 0:
+                        tmp = myfile['mz'][0: clusters[tmp_cnt] + 1]
                     else:
-                        tmp=myfile['mz'][0]
-                    col_names.append(str("%.4f"%np.around(np.mean(tmp),4))+
-                                      '_'+str("%.4f"%np.around(np.min(tmp),4))+
-                                      '_'+str("%.4f"%np.around(np.max(tmp),4)))
-            elif cnt==len(clusters):
-                new_col[clusters[cnt-1]:]=cnt
-                tmp=myfile['mz'][clusters[cnt-1]:]
-                col_names.append(str("%.4f"%np.around(np.mean(tmp),4))+
-                                 '_'+str("%.4f"%np.around(np.min(tmp),4))+
-                                 '_'+str("%.4f"%np.around(np.max(tmp),4)))
-            else:
-                new_col[clusters[max(cnt-1,0)]:clusters[cnt]]=cnt
-                tmp=myfile['mz'][clusters[max(cnt-1,0)]:clusters[cnt]]
-                col_names.append(str("%.4f"%np.around(np.mean(tmp),4))+
-                                 '_'+str("%.4f"%np.around(np.min(tmp),4))+
-                                 '_'+str("%.4f"%np.around(np.max(tmp),4)))
+                        tmp = myfile['mz'][0]
+                    col_names.append("{:.4f}_{:.4f}_{:.4f}".format(
+                            np.around(np.mean(tmp), 4),
+                            np.around(np.min(tmp), 4),
+                            np.around(np.max(tmp), 4)
+                            ))
 
-            cnt+=1
+            elif cnt == len(clusters):
+                new_col[clusters[cnt - 1]:] = cnt
+                tmp = myfile['mz'][clusters[cnt-1]:]
+                col_names.append("{:.4f}_{:.4f}_{:.4f}".format(
+                        np.around(np.mean(tmp), 4),
+                        np.around(np.min(tmp), 4),
+                        np.around(np.max(tmp), 4)
+                        ))
+
+            else:
+                new_col[clusters[max(cnt - 1, 0)]: clusters[cnt]] = cnt
+                tmp = myfile['mz'][clusters[max(cnt - 1, 0)]: clusters[cnt]]
+                col_names.append("{:.4f}_{:.4f}_{:.4f}".format(
+                        np.around(np.mean(tmp), 4),
+                        np.around(np.min(tmp), 4),
+                        np.around(np.max(tmp), 4)
+                        ))
+
+            cnt += 1
+
         #Check for consistency of labels #0, and #1 as diff condition requires that the first 
         #label is sacrificed for binning.
         #clusters->starting points of clusters, new_col->cluster id
         #Compensate for the diff
-        myfile['labels']=list(new_col)
-        self.myfile=myfile
-        self.clusters=clusters
-        self.new_col=new_col
-        self.cnt=cnt
-        self.col_names=col_names
-        self.indices=myfile['sample']
-        self.full_df=""  #DataFrame with bin ids as columns and records as rows
-        
+        myfile['labels'] = list(new_col)
+        self.myfile = myfile
+        self.clusters = clusters
+        self.new_col = new_col
+        self.cnt = cnt
+        self.col_names = col_names
+        self.indices = myfile['sample']
+        self.full_df = ""  #DataFrame with bin ids as columns and records as rows
 
         #Flags set to see to check and see what functions are executed
-        self.GL=False #Generate Linkage
-        self.GO=False #Generate output
-        self.DENDRO=False #Check if dendro was created
-        self.CLUSTERIZE=True
-        self.LINKAGE=False
-        self.clustering_method='jaccard'
+        self.GL = False #Generate Linkage
+        self.GO = False #Generate output
+        self.DENDRO = False #Check if dendro was created
+        self.CLUSTERIZE = True
+        self.LINKAGE = False
+        self.clustering_method = 'jaccard'
         #return myfile,clusters,new_col,cnt,col_names
 
-    def pop_filled_matrices(self,matrix):
+
+    def pop_filled_matrices(self, matrix):
         '''Returns the column ids that are similar'''
-        tmp=matrix.any(axis=0)
-        cnt=0
-        filled_indices=[]
+        tmp = matrix.any(axis=0)
+        cnt = 0
+        filled_indices = []
         for each in tmp:
-            if (each and cnt<matrix.shape[1]-2):
+            if each and (cnt < (matrix.shape[1] - 2)):
                 filled_indices.append(cnt) #Paula added 1 bins out of sink in individual plots
-            cnt+=1
+            cnt += 1
         return filled_indices
-    
 
-    def get_indices(self,tf,indices):
-            '''What are the index ids??'''
-            cnt=0
-            mylist=[]
-            total_cnt=0
-            for each in tf:
-                    if each :
-                            mylist.append(indices[cnt])
-                            total_cnt+=1
-                    cnt+=1
-            return mylist
-        
 
-    def plot_bins(self,inp,filename):
-        vals=np.sum(inp,axis=0)/len(inp)
+    def get_indices(self, tf, indices):
+        '''What are the index ids??'''
+        cnt = 0
+        mylist = []
+        total_cnt = 0
+        for each in tf:
+            if each:
+                mylist.append(indices[cnt])
+                total_cnt += 1
+            cnt += 1
+        return mylist
+
+
+    def plot_bins(self, inp, filename):
+        vals = np.sum(inp, axis=0) / len(inp)
         pyp.clf()
-        pyp.bar(range(len(vals)),vals)
+        pyp.bar(range(len(vals)), vals)
         pyp.savefig(filename)
 
-    def generate_linkage(self,cutoff=0.5,clustering_method='jaccard'):
+
+    def generate_linkage(self, cutoff=0.5, clustering_method='jaccard'):
         '''
         Populates self.mycluster and self.full by filling in the full linkage (self.full)
         and the individual clusters (mycluster)
         In: cutoff=0.5,clustering_method='jaccard'
         '''
-        print ("Please be patient..It may take a while to compute..")
-        A=[]
-        cluster=dict()
-        cnt=0
-        max_val=np.max(self.myfile['labels'])+1
+        #print("Please be patient..It may take a while to compute..")
+        A = []
+        cluster = dict()
+        cnt = 0
+        max_val = np.max(self.myfile['labels']) + 1
         for each in self.myfile['sample']:
-            loc=self.myfile['labels'].iloc[cnt]
+            loc = self.myfile['labels'].iloc[cnt]
             if not each in cluster:
-                cluster[each]=np.zeros(max_val,dtype=np.bool)
-            cluster[each][loc]=True
+                cluster[each] = np.zeros(max_val, dtype=np.bool)
+            cluster[each][loc] = True
             A.append(each)
-            cnt+=1
-        self.cluster=cluster
-        Full_matrix=np.zeros([len(cluster),max_val],dtype=np.bool)
-        cnt=0
-        mymax=0
-        self.labels=[]
+            cnt += 1
+        self.cluster = cluster
+        Full_matrix = np.zeros([len(cluster), max_val], dtype=np.bool)
+        cnt = 0
+        mymax = 0
+        self.labels = []
         for key in cluster:
-            Full_matrix[cnt,:]=cluster[key]
+            Full_matrix[cnt, :] = cluster[key]
             self.labels.append(key)
-            npsum=np.sum(cluster[key])
-            if npsum>mymax:
-                mymax=npsum
-            cnt+=1
-        self.full=Full_matrix[:,1:]
-        self.clustering_method=clustering_method
+            npsum = np.sum(cluster[key])
+            if npsum > mymax:
+                mymax = npsum
+            cnt += 1
+        self.full = Full_matrix[:, 1:]
+        self.clustering_method = clustering_method
         self.write_full_matrix(write_to_file=False)
+
         if not self.LINKAGE:
-            self.Z=linkage(self.full, method='complete', metric=self.clustering_method)#added complete
+            self.Z = linkage(self.full, method='complete',
+                             metric=self.clustering_method) #added complete
             self.LINKAGE=True
-        self.mycluster=fcluster(self.Z,cutoff,criterion='distance')
+
+        self.mycluster = fcluster(self.Z, cutoff, criterion='distance')
         #self.mycluster=fcluster(self.Z,cutoff)
-        self.GL=True
+        self.GL = True
 
 
-    def write_full_matrix(self,filename="full_matrix.xlsx",write_to_file=True):
-        if self.GL==False:
-            df=pd.DataFrame(self.full*1)
-            df.columns=self.col_names[1:]
-            df.index=self.labels
+    def write_full_matrix(self, filename="full_matrix.xlsx", 
+                          write_to_file=True):
+        if self.GL == False:
+            df = pd.DataFrame(self.full * 1)
+            df.columns = self.col_names[1:]
+            df.index = self.labels
             if write_to_file:
-                excel_writer=pd.ExcelWriter(filename)
+                excel_writer = pd.ExcelWriter(filename)
                 df.to_excel(excel_writer,'Sheet 1')
-            self.full_df=df
+            self.full_df = df
 
 
-        
     def generate_out(self):
-        cnt=1 # add 1
-        colnames=pd.DataFrame(self.col_names[1:])
-        for each in range(1,np.max(self.mycluster)+1):
-            tmp_indices=self.get_indices(self.mycluster==each,self.labels)
-            with open("results/cluster_"+str(len(tmp_indices))+"_"
-                     +str(cnt)+".txt","a") as text_file:
-                tmp_mat=pd.DataFrame(self.full[self.mycluster==each])
-                myiloc=self.pop_filled_matrices(self.full[self.mycluster==each])
-                mytmp=pd.DataFrame(tmp_mat*1)
-                mytmp.index=tmp_indices
-                mytmp=mytmp.iloc[:,myiloc]
-                mytmp.columns=colnames.iloc[myiloc]
-                cluster_label="Cluster : "+str(cnt)+" Length : "+str(len(tmp_indices))+"\n"# Paula changed drop 1
+        cnt = 1 # add 1
+        colnames = pd.DataFrame(self.col_names[1:])
+        for each in range(1, np.max(self.mycluster) + 1):
+            tmp_indices = self.get_indices(self.mycluster == each, self.labels)
+
+            with open("results/cluster_{}_{}.txt".format(
+                                len(tmp_indices), cnt), 'a') as text_file:
+                tmp_mat = pd.DataFrame(self.full[self.mycluster == each])
+                myiloc = self.pop_filled_matrices(self.full[self.mycluster == each])
+                mytmp = pd.DataFrame(tmp_mat * 1)
+                mytmp.index = tmp_indices
+                mytmp = mytmp.iloc[:, myiloc]
+                mytmp.columns = colnames.iloc[myiloc]
+                cluster_label = "Cluster : {} Length : {}\n".format(cnt,
+                        len(tmp_indices)) # Paula changed drop 1
                 text_file.write(cluster_label)
-                mytmp.to_csv(text_file,sep="\t")
-                self.plot_bins(mytmp,"results/Cluster_"+str(cnt)+".png")
-                cnt+=1
-        self.GO=True
+                mytmp.to_csv(text_file, sep="\t")
+                self.plot_bins(mytmp, "results/Cluster_{}.png".format(cnt))
+                cnt += 1
+
+        self.GO = True
 
 
-    def visualize(self,cutoff=5.0,x=900,y=400):
+    def visualize(self, cutoff=5.0, x=900, y=400):
     #Author: Paula
-        createFolder('./results')
-        if not self.CUTOFF==cutoff:
-           self.GL=False
+        createFolder('results')
+        if not self.CUTOFF == cutoff:
+           self.GL = False
+
         if not self.CLUSTERIZE:
            self.clusterize()
+
         if not self.GL:
            self.generate_linkage(cutoff=cutoff)
+
         if not self.GO:
            self.generate_out()
-        if self.GL==True: #Check whether linkage and outputs are generated
+
+        if self.GL == True: #Check whether linkage and outputs are generated
            #c,coph_dist=cophenet(self.Z,pdist(self.full))
-           rnames=list(self.full_df.index) # paula changed _df.index from full.indices
-           self.dendro=create_dendro(self.full,labels=rnames,distfun=lambda x: scs.distance.pdist(x, metric=self.clustering_method),color_threshold=cutoff) # Paula changed _df
-           self.dendro['layout'].update({'width':x, 'height':y, 'title':'Python plotly dendro', 'xaxis':{'title':'sample'}, 'yaxis':{'title':'distance'}, 'hovermode':'closest'})
-           self.dendro['data'].update({'hoverinfo':'all'})
-           plotly.offline.plot(self.dendro,filename='simple_dendrogram.html')
+           rnames = list(self.full_df.index) # paula changed _df.index from full.indices
+           self.dendro = create_dendro(
+                self.full,
+                labels=rnames,
+                distfun=lambda x: scs.distance.pdist(x, metric=self.clustering_method),
+                color_threshold=cutoff
+                ) # Paula changed _df
+
+           self.dendro['layout'].update({
+               'width': x,
+               'height': y,
+               'title': 'Python plotly dendro',
+               'xaxis': {'title': 'sample'},
+               'yaxis': {'title': 'distance'},
+               'hovermode': 'closest'
+               })
+
+           self.dendro['data'].update({'hoverinfo': 'all'})
+           plotly.offline.plot(self.dendro, filename='simple_dendrogram.html')
         return self.dendro
