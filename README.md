@@ -7,6 +7,17 @@ Email: catherine.rawlinson@curtin.edu.au
 Converts MGF format and component list into non-redundant list.
 Component-analyte list is converted into a data matrix and analytes are dynamically binned and clustered.
 
+## Install
+
+```
+pip install git+https://github.com/CurtinIC/BioDendro.git
+
+# or
+
+git clone git@github.com:CurtinIC/BioDendro.git && cd BIoDendro
+pip install .
+```
+
 ## Example
 
 
