@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 
 #Author: P Moolhuijzen
 #Date  : 26 February 2018
@@ -164,60 +163,3 @@ def remove_redundancy(ndic, negloss):
     table.sort_values(by='mz', inplace=True)
     return table
 
-
-def main():
-
-    parser = argparse.ArgumentParser(
-        description="Process MGF file into appropriate input for biodendro."
-        )
-
-    parser.add_argument(
-        "mgf",
-        help="MGF input file (file1.mgf)",
-        type=str
-        )
-    parser.add_argument(
-        "components",
-        help="Listed components file (file2.txt)",
-        type=str
-        )
-
-    parser.add_argument(
-        "-n", "--negative",
-        help="Apply negative loss.",
-        action="store_true"
-        )
-
-    parser.add_argument(
-        "-o", "--output",
-        default="out.csv",
-        help=("Path to write output to. XLSX output uses this filename, "
-              "replacing the extension.")
-        )
-    args = parser.parse_args()
-
-    #print(args.mgf, args.components, args.negative)
-
-
-    #Open the trigger data <file>.msg
-    with open(args.mgf, 'r') as handle:
-        rec = get_record(handle)
-
-
-    #Open the sample list <file>.csv
-    with open(args.components, 'r') as handle:
-        ndic = get_csv_record(handle, rec)
-
-    negloss = args.negative
-
-    #Now remove redundancy and print best trigger ion list
-    table = remove_redundancy(ndic, negloss)
-
-    table.to_csv(args.output, sep="\t", index=False)
-
-    # Write out an excel file too
-    xlsx_path = os.path.splitext(args.output)[0] + ".xlsx"
-    table.to_excel(xlsx_path, index=False)
-
-if __name__ == "__main__":
-    main()
