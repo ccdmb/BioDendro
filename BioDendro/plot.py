@@ -13,7 +13,7 @@ import pandas as pd
 import numpy as np
 import matplotlib
 matplotlib.use("AGG")
-import matplotlib.pyplot as pyp
+import matplotlib.pyplot as plt
 
 import scipy as scp # Non-idiomatic alias for plotly compat
 from scipy.cluster import hierarchy as sch
@@ -32,20 +32,6 @@ from plotly.graph_objs import graph_objs
 from plotly import exceptions, optional_imports
 from plotly.graph_objs import graph_objs
 
-
-
-
-# Optional imports, may be None for users that only use our core functionality.
-
-
-def createFolder(directory):
-    ''' Example createFolder('./results') '''
-
-    try:
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-    except OSError:
-        print ('Error: Creating directory. ' +  directory)
 
 
 def create_dendro(
@@ -123,7 +109,7 @@ def create_dendro(
 class _Dendrogram(object):
     """Refer to FigureFactory.create_dendrogram() for docstring."""
 
-    def __init__(self, X, orientation='bottom', labels=None, colorscale=None,
+    def __init__(self, X,orientation='bottom', labels=None, colorscale=None,
                  width="100%", height="100%", xaxis='xaxis', yaxis='yaxis',
                  distfun=lambda x: scs.distance.pdist(x, metric='jaccard'), #testing jaccard!
                  linkagefun=lambda x: sch.linkage(x, method='complete'), #testing!
@@ -339,18 +325,12 @@ class Dendrogram:
     def __init__(
             self,
             df,
-            bin_threshold=0.8E-3,
+            bin_threshold=0.8e-3,
             cutoff=0.6,
             clustering_method='jaccard',
-            **kwargs):
-        '''
-        Initializes BioDendro - package used to cluster and plot get_dendrogram_traces
-        '''
-
-        #Converts **args to self.variable
-        for each in kwargs:
-            if not "__" in each:
-                setattr(self, each, args[each])
+            ):
+        """ Initializes BioDendro - package used to cluster and plot get_dendrogram_traces
+        """
 
         self.bin_threshold = bin_threshold
         self.CUTOFF = 5.0
@@ -402,29 +382,19 @@ class Dendrogram:
                         tmp = myfile['mz'][0: clusters[tmp_cnt] + 1]
                     else:
                         tmp = myfile['mz'][0]
-                    col_names.append("{:.4f}_{:.4f}_{:.4f}".format(
-                            np.around(np.mean(tmp), 4),
-                            np.around(np.min(tmp), 4),
-                            np.around(np.max(tmp), 4)
-                            ))
 
             elif cnt == len(clusters):
                 new_col[clusters[cnt - 1]:] = cnt
                 tmp = myfile['mz'][clusters[cnt-1]:]
-                col_names.append("{:.4f}_{:.4f}_{:.4f}".format(
-                        np.around(np.mean(tmp), 4),
-                        np.around(np.min(tmp), 4),
-                        np.around(np.max(tmp), 4)
-                        ))
-
             else:
                 new_col[clusters[max(cnt - 1, 0)]: clusters[cnt]] = cnt
                 tmp = myfile['mz'][clusters[max(cnt - 1, 0)]: clusters[cnt]]
-                col_names.append("{:.4f}_{:.4f}_{:.4f}".format(
-                        np.around(np.mean(tmp), 4),
-                        np.around(np.min(tmp), 4),
-                        np.around(np.max(tmp), 4)
-                        ))
+
+            col_names.append("{:.4f}_{:.4f}_{:.4f}".format(
+                    np.around(np.mean(tmp), 4),
+                    np.around(np.min(tmp), 4),
+                    np.around(np.max(tmp), 4)
+                    ))
 
             cnt += 1
 
@@ -478,9 +448,9 @@ class Dendrogram:
     @staticmethod
     def plot_bins(inp, filename):
         vals = np.sum(inp, axis=0) / len(inp)
-        pyp.clf()
-        pyp.bar(range(len(vals)), vals)
-        pyp.savefig(filename)
+        plt.clf()
+        plt.bar(range(len(vals)), vals)
+        plt.savefig(filename)
 
 
     def generate_linkage(self, cutoff=None, clustering_method=None):
@@ -541,8 +511,9 @@ class Dendrogram:
     def generate_out(self, path="results"):
         cnt = 1 # add 1
 
+        os.makedirs(path, exist_ok=True)
 
-        createFolder(path)
+        create_folder(path)
         colnames = pd.DataFrame(self.col_names[1:])
 
         for each in range(1, np.max(self.mycluster) + 1):

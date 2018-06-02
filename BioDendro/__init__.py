@@ -7,7 +7,7 @@ import logging
 
 import plotly
 
-from BioDendro.preprocess import get_record
+from BioDendro.preprocess import MGFRecord
 from BioDendro.preprocess import get_csv_record
 from BioDendro.preprocess import remove_redundancy
 from BioDendro.plot import Dendrogram
