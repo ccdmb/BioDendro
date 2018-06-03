@@ -3,17 +3,13 @@
 
 import argparse
 
-import logging
-
 import plotly
 
 from BioDendro.preprocess import MGFRecord
 from BioDendro.preprocess import get_csv_record
 from BioDendro.preprocess import remove_redundancy
-from BioDendro.plot import Dendrogram
+#from BioDendro.plot import Dendrogram
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 def pipeline(
         mgf,
@@ -31,7 +27,6 @@ def pipeline(
         **kwargs
         ):
 
-    logger.info("test")
     #Open the trigger data <file>.msg
     with open(mgf, 'r') as handle:
         rec = get_record(handle)
@@ -49,7 +44,7 @@ def pipeline(
 
     """
     data = Dendrogram(
-        table, 
+        table,
         bin_threshold=bin_threshold,
         cutoff=cutoff,
         clustering_method=clustering_method

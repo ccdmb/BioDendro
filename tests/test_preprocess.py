@@ -1,12 +1,9 @@
-"""
-"""
-
 import pytest
 
 from BioDendro.preprocess import split_msms_title
 from BioDendro.preprocess import MGFRecord
 from BioDendro.preprocess import Ion
-
+from BioDendro.preprocess import SampleRecord
 
 
 # Test MGFRecord methods
@@ -183,6 +180,52 @@ def test_MGFRecord_parse(sample, expected):
     return
 
 
+# Test MGF methods
+
+def test_MGF_closest():
+    return
+
+
+# Test SampleRecord methods
+
+@pytest.mark.parametrize("sample,expected", [
+    ("Chinese Spring 1_001829_4250_m/z129.1274_RT5.4654\n", {"mz": 129.1274, "retention": 5.4654 * 60}),
+    ("blk_001809_0035_m/z141.0508_RT0.5557", {"mz": 141.0508, "retention": 0.5557 * 60}),
+    ("Cobra 2_001852_2090_m/z194.1174_RT4.0473", {"mz": 194.1174, "retention": 4.0473 * 60}),
+    ("Espada 1_001827_1146_m/z235.1439_RT1.5430", {"mz": 235.1439, "retention": 1.5430* 60})
+    ])
+def test_SampleRecord__read(sample, expected):
+    actual = SampleRecord._read(sample, sep="_")
+
+    for key, exp in expected.items():
+        assert getattr(actual, key) == exp
+    return
+
+
+@pytest.mark.parametrize("sample,expected", [
+    (
+        ["Chinese Spring 1_001829_4250_m/z129.1274_RT5.4654",
+         "blk_001809_0035_m/z141.0508_RT0.5557",
+         "Cobra 2_001852_2090_m/z194.1174_RT4.0473",
+         "Espada 1_001827_1146_m/z235.1439_RT1.5430"],
+        [{"mz": 129.1274, "retention": 5.4654 * 60},
+         {"mz": 141.0508, "retention": 0.5557 * 60},
+         {"mz": 194.1174, "retention": 4.0473 * 60},
+         {"mz": 235.1439, "retention": 1.5430* 60}]
+    )
+    ])
+def test_SampleRecord_parse(sample, expected):
+    actual = SampleRecord.parse(sample)
+
+    assert len(actual) == len(expected)
+    for act, exp in zip(actual, expected):
+        for key, exp_val in exp.items():
+            assert getattr(act, key) == exp_val
+    return
+
+
+# Test standalone methods
+
 @pytest.mark.parametrize("sample,expected", [
     ('File: "\\Mac\Home\Desktop\TEMP\QE_2017_001814.raw"; SpectrumID: "2"; scans: "2"', "QE_2017_001814"),
     (r'File: "/home/user/test_name.raw"; SpectrumID: "3"', "test_name")
@@ -193,4 +236,5 @@ def test_split_msms_title(sample, expected):
 
     assert actual == expected
     return
+
 

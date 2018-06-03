@@ -1,30 +1,76 @@
-
-#Author: P Moolhuijzen
-#Date  : 26 February 2018
-#Inputs: <input1>.mgf and <input1>.csv text files
-#Ouputs: <msms_nonredundant_list>.txt
+"""
+Preprocess contains methods for parsing and manipulating mass spec files.
+"""
 
 import os
 import re
 import sys
 import argparse
-import logging
 from collections import defaultdict
 from collections import namedtuple
 
-import xlsxwriter
-import csv
-import operator
 import pandas as pd
 
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-
-logger.debug("Loaded module: preprocess")
-
 # Named tuple to represent ions and pepmass in MGF
 Ion = namedtuple("Ion", ["mz", "intensity"])
+
+
+class MGF(object):
+    """ """
+
+    def __init__(self, records):
+        self.records = records
+        return
+
+
+    @classmethod
+    def parse(cls, handle):
+        records = MGFRecord.parse(handle)
+        records.sort(key=lambda x: x.pepmass.mz)
+        return cls(records)
+
+
+    def closest(self, mz, retention, mz_tol=0.002, retention_tol=5):
+        """ Currently just naive loop through.
+
+        Could speed up using binary search
+        """
+
+        closest = None
+
+        lower_mz = mz - mz_tol
+        upper_mz = mz + mz_tol
+
+        lower_retention = retention - retention_tol
+        upper_retention = retention + retention_tol
+
+        # Initialise the minimum mass distance
+        # Unrealistic number to guarantee match
+        min_dist_mz = float("inf")
+        # Initialise minimum retention distance
+        min_dist_retention = float("inf")
+
+        for record in self.records:
+            if record.pepmass.mz >= upper_mz:
+                break
+            elif lower_mz >= record.pepmass.mz:
+                continue
+            elif lower_retention < record.retention < upper_retention:
+                dist_mz = abs(mz - record.pepmass.mz)
+                dist_retention = abs(retention - record.retention)
+
+                # find the closest trigger to the sample
+                if dist_mz < min_dist_mz and dist_retention < min_dist_retention:
+                    # new distance of trigger mass to sample
+                    min_dist_mz = dist_mz
+                    # new distance of trigger retention time to sample
+                    min_dist_retention = dist_retention
+                    # set best trigger match
+                    closest = record
+
+        return closest
+
 
 class MGFRecord(object):
     """ Represents single MGF records intended to be used in a list. """
@@ -42,9 +88,6 @@ class MGFRecord(object):
         self.pepmass = pepmass
         self.charge = charge
         self.ions = ions
-
-        # Possibly should assert that some fields not none.
-        logger.debug("Created record: {}".format(self))
         return
 
 
@@ -119,6 +162,7 @@ class MGFRecord(object):
         pepmass = None
         charge = None
         ions = []
+
         for line in lines:
             if line.startswith("TITLE"):
                 title = cls._get_title(line)
@@ -187,49 +231,46 @@ def split_msms_title(line):
     return basename
 
 
-def get_csv_record(handle, mgf, mz_tol=0.002, retention_tol=5):
-    """ Collects all the csv list (real samples list) matches to the trigger
-    data within a mass of 0.002 and retention time of 5 secs return a
-    dictionary key real sample id and value of triggers (id and ions list)
-    """
+class SampleRecord(object):
 
-    output = {}
-
-    for line in handle:
-        # Skip any lines with "Components"
-        if 'Components' in line:
-            continue
-
-        # real sample mass
-        line = line.rstrip('\n')
-        sline = line.split('_')
-        mz = float(sline[3].lstrip('m/z'))
-
-        # real sample retention time
-        retention = float(sline[4].lstrip('RT'))
-        retention = int(retention * 60)
-
-        upper_mz = mz + 0.002
-        lower_mz = mz - mz_tol
-
-        upper_retention = retention + retention_tol
-        lower_retention = retention - retention_tol
-
-        comp = []
-
-        # Using t_ to denote "trigger" since retention and mz are common terms.
-        for trigger in mgf:
-            if ((lower_mz < trigger.pepmass.mz < upper_mz) and
-                    (lower_retention < trigger.retention < upper_retention)):
-                comp.append(trigger)
-
-        if len(comp) > 0:
-            output[(mz, retention)] = comp
-
-    return output
+    def __init__(self, mz, retention):
+        """ A simple class to store 'real samples'. """
+        self.mz = mz
+        self.retention = retention
+        return
 
 
-def remove_redundancy(ndic, neutral=False):
+    @classmethod
+    def _read(cls, line, sep="_"):
+        """ Read a line and construct new object. """
+        sline = line.strip().split(sep)
+
+        # Get real sample mass
+        mz = float(sline[3].lstrip("m/z"))
+
+        # Get real sample retention time in seconds.
+        retention = float(sline[4].lstrip('RT')) * 60
+        return cls(mz, retention)
+
+
+    @classmethod
+    def parse(cls, handle):
+        """ Parse lines in a file-like object and return list of objects. """
+
+        output = []
+
+        for line in handle:
+            # Skip any lines with "Components"
+            if 'Components' in line:
+                continue
+
+            output.append(cls._read(line))
+
+        return output
+
+
+def remove_redundancy(samples, mgf, mz_tol=0.002, retention_tol=5,
+                      neutral=False):
     """ Selects the closest trigger mass to the real sample mass
     Prints the best trigger id and ion list
     """
@@ -237,39 +278,27 @@ def remove_redundancy(ndic, neutral=False):
     output = []
 
     # Looping through real samples.
-    for (mz, retention), triggers in ndic.items():
-        # Initialise the minimum mass distance
-        d_mz = 10 # Unrealistic number to guarantee match
+    for sample in samples:
+        # Find all close triggers in the MGF.
+        trigger = mgf.closest(sample.mz, sample.retention, mz_tol,
+                              retention_tol)
 
-        # Initialise minimum retention distance
-        d_retention = 1000
+        if trigger is None:
+            continue
 
-        for trigger in triggers:
-            this_d_mz = abs(mz - trigger.pepmass.mz)
-            this_d_retention = abs(retention - trigger.retention)
-
-            # find the closest trigger to the sample
-            if this_d_mz < d_mz and this_d_retention < d_retention:
-                # new distance of trigger mass to sample
-                d_mz = this_d_mz
-                # new distance of trigger retention time to sample
-                d_retention = this_d_retention
-                # set best trigger match
-                best = trigger
-
-        for ion in best.ions:
+        # Add all of the ion masses
+        for ion in trigger:
             if neutral:
-                # get negative loss
+                # get neutral loss
                 ion_mz = round(ion.mz - trigger.pepmass.mz, 5)
             else:
                 ion_mz = ion.mz
+
             record = (
-                "{}_{}_{}".format(best.title, best.pepmass.mz, best.retention),
+                "{}_{}_{}".format(trigger.title, trigger.pepmass.mz, trigger.retention),
                 ion_mz
                 )
-
             output.append(record)
-
 
     # Return the table, sorted by mz
     table = pd.DataFrame(output, columns=['sample', 'mz'])
