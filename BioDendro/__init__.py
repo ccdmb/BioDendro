@@ -4,8 +4,9 @@
 __name__ = "BioDendro"
 __version__ = "0.0.1"
 
-
+import os
 import argparse
+from datetime import datetime
 
 import plotly
 
@@ -24,11 +25,12 @@ def pipeline(
         bin_threshold=8e-4,
         clustering_method="jaccard",
         processed="processed.xlsx",
-        results_dir="results",
+        results_dir=None,
         out_html="simple_dendrogram.html",
         width=900,
         height=400,
         quiet=False,
+        **kwargs
         ):
     """ Runs the default BioDendro pipeline. """
 
@@ -37,24 +39,41 @@ def pipeline(
     else:
         printer = lambda *s: print(*s)
 
-    printer((
-        "Running {} v{}\n\n".format(__name__, __version__)
-        "- input mgf file = {}".format(mgf_path)
-        "- input components file = {}".format(components_path)
-        "- neutral = {}\n".format(neutral)
-        "- cutoff = {}\n".format(cutoff)
-        "- bin_threshold = {}\n".format(bin_threshold)
-        "- clustering_method = {}\n".format(clustering_method)
-        "- output processed file = {}\n".format(processed)
-        "- output results directory = {}\n".format(results_dir)
-        "- output html dendrogram = {}\n".format(out_html)
-        "- dendrogram figure width = {}\n".format(width)
-        "- dendrogram figure height = {}\n".format(height)
-        "\n"
-    ))
+    if results_dir is None:
+        dt = datetime.now()
+        results_dir = "results_{}".format(dt.strftime("%Y%m%d%H%M%S"))
+
+    printer(("Running {name} v{version}\n\n"
+             "- input mgf file = {mgf}\n"
+             "- input components file = {comp}\n"
+             "- neutral = {neu}\n"
+             "- cutoff = {cut}\n"
+             "- bin_threshold = {bin}\n"
+             "- clustering_method = {clu}\n"
+             "- output processed file = {pro}\n"
+             "- output results directory = {res}\n"
+             "- output html dendrogram = {html}\n"
+             "- dendrogram figure width = {x}\n"
+             "- dendrogram figure height = {y}\n"
+             "\n").format(
+                 name=__name__,
+                 version=__version__,
+                 mgf=mgf_path,
+                 comp=components_path,
+                 neu=neutral,
+                 cut=cutoff,
+                 bin=bin_threshold,
+                 clu=clustering_method,
+                 pro=processed,
+                 res=results_dir,
+                 html=out_html,
+                 x=width,
+                 y=height,
+                 )
+    )
 
     #Open the trigger data <file>.msg
-    with open(mgf, 'r') as handle:
+    with open(mgf_path, 'r') as handle:
         mgf = MGF.parse(handle)
 
     # Customised MGF title handler.
@@ -68,7 +87,7 @@ def pipeline(
 
     #Now remove redundancy and print best trigger ion list
     printer("Processing inputs")
-    table = remove_redundancy(components, mgf, neutral)
+    table = remove_redundancy(components, mgf, neutral=neutral)
 
     # Write out an excel file too
     table.to_excel(processed, index=False)
@@ -78,10 +97,11 @@ def pipeline(
     tree.fit(table)
 
     printer("Writing per-cluster summaries")
+    os.makedirs(results_dir, exist_ok=True)
     tree.write_summaries(path=results_dir)
 
     printer("Writing output html dendrogram")
-    _ = tree.iplot(filename=out_html, x=width, y=height)
+    _ = tree.iplot(filename=out_html, width=width, height=height)
 
     printer("Finished")
     return
@@ -93,15 +113,11 @@ def main():
 
     parser.add_argument(
         "mgf",
-        dest="mgf_path",
         help="MGF input file.",
-        type=str
         )
     parser.add_argument(
         "components",
-        dest="components_path",
         help="Listed components file.",
-        type=str
         )
 
     parser.add_argument(
@@ -151,9 +167,10 @@ def main():
         "-r", "--results-dir",
         dest="results_dir",
         default=None,
-        help=("Directory to write per-cluster plots and table to." 
+        help=("Directory to write per-cluster plots and table to."
               "Default is to use 'results_20180606112200' where the number is"
-              "the current datetime.")
+              "the current datetime.\n"
+              "WARNING: will overwrite contents of existing directories.")
         )
 
     parser.add_argument(
@@ -176,11 +193,10 @@ def main():
         "-q", "--quiet",
         help="Suppress status notifications written to stdout.",
         action="store_true",
-        type=bool,
         default=False
         )
 
 
     args = parser.parse_args()
-    pipeline(**args.__dict__)
+    pipeline(mgf_path=args.mgf, components_path=args.components, **args.__dict__)
     return

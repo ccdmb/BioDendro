@@ -213,7 +213,6 @@ class MGFRecord(object):
         keyword arguments:
         handle -- a file like object or list of strings representing the mgf.
         """
-        logger.debug("Parsing MGF file")
 
         output = []
 
@@ -305,7 +304,7 @@ def remove_redundancy(samples, mgf, mz_tol=0.002, retention_tol=5,
             continue
 
         # Add all of the ion masses
-        for ion in trigger:
+        for ion in trigger.ions:
             if neutral:
                 # get neutral loss
                 ion_mz = round(ion.mz - trigger.pepmass.mz, 5)
@@ -321,4 +320,5 @@ def remove_redundancy(samples, mgf, mz_tol=0.002, retention_tol=5,
     # Return the table, sorted by mz
     table = pd.DataFrame(output, columns=['sample', 'mz'])
     table.sort_values(by='mz', inplace=True)
+    table.reset_index(drop=True, inplace=True)
     return table

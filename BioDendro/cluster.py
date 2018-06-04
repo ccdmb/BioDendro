@@ -16,6 +16,8 @@ import matplotlib
 matplotlib.use("AGG")
 from matplotlib import pyplot as plt
 
+import plotly
+
 from BioDendro.plot import create_dendro
 
 class Tree(object):
@@ -127,6 +129,7 @@ class Tree(object):
         # C-strings later
         longest_name_len = 0
 
+        i = 0
         # Starting at 1 because we need i - 1. Which will always be 0.
         for i in range(1, len(starts)):
             # Get the slice as an object to avoid rewriting it.
@@ -158,8 +161,12 @@ class Tree(object):
 
         # Return the bin names. And convert the array type to a C-string with
         # the maximum number of characters required.
-        return bins.astype("|S{}".format(longest_bin_len))
+        #return bins.astype("|S{}".format(longest_bin_len))
 
+        # Uncomment above line if C string performance is necessary.
+        # But you would need to decode the strings from binary to get them to
+        # print normally.
+        return bins
 
     @staticmethod
     def _pivot(df, bins, index_col):
@@ -202,7 +209,7 @@ class Tree(object):
         df = self.df.copy()
         colname = self.mz_col
 
-        bin_starts = self._bin_diffs(df[colname], threshold)
+        bin_starts = self._bin_starts(df[colname], threshold)
         bins = self._bin_names(df[colname], bin_starts)
         self.onehot_df = self._pivot(df, bins, "sample")
         return
@@ -251,6 +258,8 @@ class Tree(object):
 
         if cutoff is None:
             cutoff = self.cutoff
+        else:
+            self.cutoff = cutoff
 
         self.clusters = fcluster(self.tree, cutoff, criterion='distance')
         return
@@ -299,7 +308,7 @@ class Tree(object):
         path -- The directory to write the output to. This directory must
             exist.
         """
-        df = self.df
+        df = self.onehot_df
         clusters = self.clusters
 
         for cluster, subtab in df.groupby(clusters):
@@ -310,7 +319,7 @@ class Tree(object):
                     "cluster_{}_{}.csv".format(cluster, nmembers))
             subtab.to_csv(csv_filename, sep="\t")
 
-            fig, ax = self.plot_bin_freqs(subtab)
+            fig, ax = self._plot_bin_freqs(subtab)
             fig.suptitle("Cluster {} with {} members".format(cluster,
                                                              subtab.shape[0]))
             plt_filename = pjoin(path,
@@ -338,7 +347,8 @@ class Tree(object):
         """ Plots an interactive tree from these data using plotly.
 
         Keyword arguments:
-        filename -- The path to save the plotly html file.
+        filename -- The path to save the plotly html file. If None, don't write
+            the plot.
         cutoff -- See __init__. If None will inherit value from object.
         clustering_method -- As for cutoff.
         width -- Width of the plot in pixels.
@@ -346,6 +356,9 @@ class Tree(object):
 
         Uses:
         self.onehot_df
+
+        Returns:
+        A dictionary suitable to be give to plotly.
         """
 
         df = self.onehot_df
@@ -374,5 +387,7 @@ class Tree(object):
             })
 
         dendro['data'].update({'hoverinfo': 'all'})
-        plotly.offline.plot(dendro, filename=filename)
+        if filename is not None:
+            plotly.offline.plot(dendro, filename=filename)
+
         return dendro
