@@ -16,9 +16,7 @@ import matplotlib
 matplotlib.use("AGG")
 from matplotlib import pyplot as plt
 
-
 from BioDendro.plot import create_dendro
-
 
 class Tree(object):
 
@@ -28,9 +26,9 @@ class Tree(object):
 
     def __init__(
             self,
-            df,
-            bin_threshold=8e-4,
+            threshold=8e-4,
             clustering_method="jaccard",
+            cutoff=0.6,
             sample_col="sample",
             mz_col="mz",
             ):
@@ -38,21 +36,41 @@ class Tree(object):
 
         Keyword arguments:
         df -- A pandas dataframe containing samples and mz values.
-        bin_threshold -- The threshold to use when dynamically binning mz's.
+        threshold -- The threshold to use when dynamically binning mz's.
         clustering_method -- The distance metric used when hierarchically
             clustering samples based on mz bin presence absence.
+        cutoff -- .
         sample_col -- The column name in the df to use as the samples.
         mz_col -- The column name in the df to use as the mz values.
         """
-        self.df = df.copy()
-        self.bin_threshold = bin_threshold
+        self.threshold = threshold
         self.clustering_method = clustering_method
+        self.cutoff = cutoff
         self.sample_col = sample_col
         self.mz_col = mz_col
 
-        self.bin()
-        self.hclust()
-        self.select_clusters()
+        return
+
+
+    def fit(self, df):
+        """ Bins the data and generates the tree.
+
+        Keyword arguments:
+        df -- A pandas dataframe containing samples and mz values.
+
+        Modifies:
+        self.df -- Creates a copy of the input data.
+        Other elements modified indirectly.
+        """
+
+        self.df = df.copy()
+        threshold = self.threshold
+        clustering_method = self.clustering_method
+        cutoff = self.cutoff
+
+        self._bin(threshold)
+        self._hclust(clustering_method)
+        self.cut_tree(cutoff)
         return
 
 
@@ -164,11 +182,11 @@ class Tree(object):
                               values="present", fill_value=False)
 
 
-    def bin(self, bin_threshold=None):
+    def _bin(self, threshold=None):
         """ Get names of the bins and assign to mz rows.
 
         Keyword arguments:
-        bin_threshold -- See __init__. If none, inherits threshold from object.
+        threshold -- See __init__. If none, inherits threshold from object.
 
         Uses:
         self.df
@@ -178,19 +196,19 @@ class Tree(object):
         self.onehot_df -- A one-hot encoded dataframe of samples vs bins.
         """
 
-        if bin_threshold is None:
-            bin_threshold = self.bin_threshold
+        if threshold is None:
+            threshold = self.threshold
 
         df = self.df.copy()
         colname = self.mz_col
 
-        bin_starts = self._bin_diffs(df[colname], bin_threshold)
+        bin_starts = self._bin_diffs(df[colname], threshold)
         bins = self._bin_names(df[colname], bin_starts)
         self.onehot_df = self._pivot(df, bins, "sample")
         return
 
 
-    def hclust(self, clustering_method=None):
+    def _hclust(self, clustering_method=None):
         """ Hierarchically cluster the one hot encoded dataframe.
 
         Keyword arguments:
@@ -215,7 +233,7 @@ class Tree(object):
         return
 
 
-    def select_clusters(self, cutoff=None):
+    def cut_tree(self, cutoff=None):
         """ Selects clusters from the clustered tree based on distance.
 
         Keyword arguments:

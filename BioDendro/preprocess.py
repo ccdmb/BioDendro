@@ -6,6 +6,7 @@ import os
 import re
 import sys
 import argparse
+from bisect import bisect_left
 from collections import defaultdict
 from collections import namedtuple
 
@@ -21,6 +22,7 @@ class MGF(object):
 
     def __init__(self, records):
         self.records = records
+        self.mzs = [r.pepmass.mz for r in records]
         return
 
 
@@ -32,9 +34,20 @@ class MGF(object):
 
 
     def closest(self, mz, retention, mz_tol=0.002, retention_tol=5):
-        """ Currently just naive loop through.
+        """ Find the closest trigger match to a mz and retention value.
 
-        Could speed up using binary search
+        Keyword arguments:
+        mz --
+        retention --
+        mz_tol --
+        retention_tol --
+
+        Uses:
+        self.records
+        self.mzs
+
+        NB self.records must be sorted by mzs, and mzs must correspond to the
+        records.
         """
 
         closest = None
@@ -51,23 +64,28 @@ class MGF(object):
         # Initialise minimum retention distance
         min_dist_retention = float("inf")
 
-        for record in self.records:
+        # Use a binary search to find the first passing mz value
+        # Start the loop from there.
+        min_bound = bisect_left(self.mzs, lower_mz)
+
+        for record in self.records[min_bound:]:
             if record.pepmass.mz >= upper_mz:
                 break
-            elif lower_mz >= record.pepmass.mz:
+            elif (record.retention <= lower_retention
+                    or record.retention >= upper_retention):
                 continue
-            elif lower_retention < record.retention < upper_retention:
-                dist_mz = abs(mz - record.pepmass.mz)
-                dist_retention = abs(retention - record.retention)
 
-                # find the closest trigger to the sample
-                if dist_mz < min_dist_mz and dist_retention < min_dist_retention:
-                    # new distance of trigger mass to sample
-                    min_dist_mz = dist_mz
-                    # new distance of trigger retention time to sample
-                    min_dist_retention = dist_retention
-                    # set best trigger match
-                    closest = record
+            dist_mz = abs(mz - record.pepmass.mz)
+            dist_retention = abs(retention - record.retention)
+
+            # find the closest trigger to the sample
+            if dist_mz < min_dist_mz and dist_retention < min_dist_retention:
+                # new distance of trigger mass to sample
+                min_dist_mz = dist_mz
+                # new distance of trigger retention time to sample
+                min_dist_retention = dist_retention
+                # set best trigger match
+                closest = record
 
         return closest
 
