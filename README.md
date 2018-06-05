@@ -14,7 +14,7 @@ pip install git+https://github.com/CurtinIC/BioDendro.git
 
 # or
 
-git clone git@github.com:CurtinIC/BioDendro.git && cd BIoDendro
+git clone git@github.com:CurtinIC/BioDendro.git && cd BioDendro
 pip install .
 ```
 

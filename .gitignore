@@ -4,3 +4,4 @@ env
 .ipynb_checkpoints
 
 BioDendro.egg-info/
+.pytest_cache

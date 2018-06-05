@@ -1,223 +1,324 @@
-#!/usr/bin/env python3
-
-#Author: P Moolhuijzen
-#Date  : 26 February 2018
-#Inputs: <input1>.mgf and <input1>.csv text files
-#Ouputs: <msms_nonredundant_list>.txt 
+"""
+Preprocess contains methods for parsing and manipulating mass spec files.
+"""
 
 import os
+import re
 import sys
 import argparse
+from bisect import bisect_left
 from collections import defaultdict
-import xlsxwriter
-import csv
-import operator
+from collections import namedtuple
+
 import pandas as pd
 
 
-def get_record(lines):
-    """ Make a dictionary key pepmass-retention-time
-    and value of ions from the trigger data (MGF file)
-    """
+# Named tuple to represent ions and pepmass in MGF
+Ion = namedtuple("Ion", ["mz", "intensity"])
 
-    mydic = {}
-    val = []
-    p = ''
-    for fl in lines:
-        if 'TITLE' in fl:
-            ft, f, spt, sp, sct, sc = fl.split(' ')
-            fls = f.split('\\')
-            fna = fls[-1]
-            fid, suf = fna.split('.')
-        elif 'PEPMASS' in fl:
-            pt, p = fl.split('=')
-            m, a = p.split(' ')
-        elif 'RTINSECONDS' in fl:
-            rt, rtn = fl.split('=')
-            key = fid + "_" + m + "_" + rtn
-        elif fl[0].isdigit():
-            ion, area = fl.split(' ')
-            flag = 1
-            val.extend([ion])
-        elif 'END' in fl:
-            if flag == 1:
-                mydic[key] = val
-                val = []
-                flag = 0
+
+class MGF(object):
+    """ """
+
+    def __init__(self, records):
+        self.records = records
+        self.mzs = [r.pepmass.mz for r in records]
+        return
+
+
+    @classmethod
+    def parse(cls, handle):
+        records = MGFRecord.parse(handle)
+        records.sort(key=lambda x: x.pepmass.mz)
+        return cls(records)
+
+
+    def closest(self, mz, retention, mz_tol=0.002, retention_tol=5):
+        """ Find the closest trigger match to a mz and retention value.
+
+        Keyword arguments:
+        mz --
+        retention --
+        mz_tol --
+        retention_tol --
+
+        Uses:
+        self.records
+        self.mzs
+
+        NB self.records must be sorted by mzs, and mzs must correspond to the
+        records.
+        """
+
+        closest = None
+
+        lower_mz = mz - mz_tol
+        upper_mz = mz + mz_tol
+
+        lower_retention = retention - retention_tol
+        upper_retention = retention + retention_tol
+
+        # Initialise the minimum mass distance
+        # Unrealistic number to guarantee match
+        min_dist_mz = float("inf")
+        # Initialise minimum retention distance
+        min_dist_retention = float("inf")
+
+        # Use a binary search to find the first passing mz value
+        # Start the loop from there.
+        min_bound = bisect_left(self.mzs, lower_mz)
+
+        for record in self.records[min_bound:]:
+            if record.pepmass.mz >= upper_mz:
+                break
+            elif (record.retention <= lower_retention
+                    or record.retention >= upper_retention):
+                continue
+
+            dist_mz = abs(mz - record.pepmass.mz)
+            dist_retention = abs(retention - record.retention)
+
+            # find the closest trigger to the sample
+            if dist_mz < min_dist_mz and dist_retention < min_dist_retention:
+                # new distance of trigger mass to sample
+                min_dist_mz = dist_mz
+                # new distance of trigger retention time to sample
+                min_dist_retention = dist_retention
+                # set best trigger match
+                closest = record
+
+        return closest
+
+
+class MGFRecord(object):
+    """ Represents single MGF records intended to be used in a list. """
+
+    def __init__(
+            self,
+            title,
+            retention,
+            pepmass,
+            charge=None,
+            ions=[],
+            ):
+        self.title = title
+        self.retention = retention
+        self.pepmass = pepmass
+        self.charge = charge
+        self.ions = ions
+        return
+
+
+    def __str__(self):
+        cls = self.__class__.__name__
+        template = ("{}(title='{}', retention={}, pepmass={}, "
+                    "charge='{}', ions={})")
+        return template.format(cls, self.title, self.retention, self.pepmass,
+                               self.charge, self.ions)
+
+
+    def __repr__(self):
+        return str(self)
+
+
+    @staticmethod
+    def _split_kvline(key, string):
+        """ Takes a field key and string and removes the key and equals sign """
+        return string[len(key) + 1:].strip()
+
+
+    @classmethod
+    def _get_title(cls, string, key="TITLE"):
+        """ Process the title field.
+
+        Note there is no standard for storing metadata in here, so specialised
+        extraction is risky for compatibility with other peoples datasets.
+        """
+        return cls._split_kvline(key, string)
+
+
+    @classmethod
+    def _get_pepmass(cls, string, key="PEPMASS"):
+        """ Strips key from mass and returns an Ion object. """
+        pepmass = cls._split_kvline(key, string)
+        return cls._get_ion(pepmass)
+
+
+    @classmethod
+    def _get_retention(cls, string, key="RTINSECONDS"):
+        """ Get the retention time in seconds back. """
+        rtinseconds = cls._split_kvline(key, string)
+        return float(rtinseconds)
+
+    @classmethod
+    def _get_charge(cls, string, key="CHARGE"):
+        """ Not fully implemented. Just basic support. """
+        return cls._split_kvline(key, string)
+
+
+    @classmethod
+    def _get_ion(cls, string):
+        """ Convert a string into an Ion named tuple. """
+        string = string.split()
+
+        mz = float(string[0].strip())
+
+        # Intensity/peak area field is optional.
+        if len(string) > 1:
+            intensity = float(string[1].strip())
+        else:
+            intensity = None
+
+        # NB any other values in here are ignored by specification.
+        return Ion(mz, intensity)
+
+
+    @classmethod
+    def _read(cls, lines):
+        title = None
+        retention = None
+        pepmass = None
+        charge = None
+        ions = []
+
+        for line in lines:
+            if line.startswith("TITLE"):
+                title = cls._get_title(line)
+
+            elif line.startswith("RTINSECONDS"):
+                retention = cls._get_retention(line)
+
+            elif line.startswith("PEPMASS"):
+                pepmass = cls._get_pepmass(line)
+
+            elif line.startswith("CHARGE"):
+                charge = cls._get_charge(line)
+
+            # Skip lines that we don't explicitly handle.
+            elif "=" in line:
+                continue
+
             else:
-                val = []
-                flag = 0
+                # Eventually need to wrap this in try... except
+                ion = cls._get_ion(line)
+                ions.append(ion)
 
-    return mydic
+        return cls(title, retention, pepmass, charge, ions)
 
 
-def get_csv_record(lines2, rec):
-    """ Collects all the csv list (real samples list) matches to the trigger
-    data within a mass of 0.002 and retention time of 5 secs return a
-    dictionary key real sample id and value of triggers (id and ions list) 
+    @classmethod
+    def parse(cls, handle):
+        """ Parses an MGF file into a list of MGF objects.
+
+        keyword arguments:
+        handle -- a file like object or list of strings representing the mgf.
+        """
+
+        output = []
+
+        in_block = False
+        block = []
+        for line in handle:
+            if line.startswith("END"):
+                output.append(cls._read(block))
+                block = []
+                in_block = False
+
+            elif line.startswith("BEGIN"):
+                assert len(block) == 0
+                in_block = True
+
+            elif in_block:
+                block.append(line.strip())
+
+        return output
+
+
+def split_msms_title(line):
+    """ Split a title line into a useful format. """
+
+    regex = re.compile(r"\\|/")
+    sline = line.split(" ")
+
+
+    # Using a regex to spit on file paths to handle
+    # different OS's
+    filename = regex.split(sline[1])[-1]
+    basename = os.path.splitext(filename)[0]
+    return basename
+
+
+class SampleRecord(object):
+
+    def __init__(self, mz, retention):
+        """ A simple class to store 'real samples'. """
+        self.mz = mz
+        self.retention = retention
+        return
+
+
+    @classmethod
+    def _read(cls, line, sep="_"):
+        """ Read a line and construct new object. """
+        sline = line.strip().split(sep)
+
+        # Get real sample mass
+        mz = float(sline[3].lstrip("m/z"))
+
+        # Get real sample retention time in seconds.
+        retention = float(sline[4].lstrip('RT')) * 60
+        return cls(mz, retention)
+
+
+    @classmethod
+    def parse(cls, handle):
+        """ Parse lines in a file-like object and return list of objects. """
+
+        output = []
+
+        for line in handle:
+            # Skip any lines with "Components"
+            if 'Components' in line:
+                continue
+
+            output.append(cls._read(line))
+
+        return output
+
+
+def remove_redundancy(samples, mgf, mz_tol=0.002, retention_tol=5,
+                      neutral=False):
+    """ Selects the closest trigger mass to the real sample mass
+    Prints the best trigger id and ion list
     """
 
-    nwdic = {}
-    for cl in lines2:
-        if 'Components' not in cl:
-           mass = cl.split('_')
-           mass[3] = mass[3].strip('m/z') # real sample mass
-           rto = mass[4].strip('RT')
-           rto = float(rto) * 60
-           rto = int(rto) # real sample retention time 
-           umass = float(mass[3]) + 0.002
-           lmass = float(mass[3]) - 0.002
-           urt = rto + 5
-           lrt = rto - 5
+    output = []
 
-           comp = []
-           for key in rec:
-               mk = key.split('_')
-               mk[3] = float(mk[3]) # mass of trigger data
-               mk[4] = int(mk[4]) # rentention time of trigger data
-               if (lmass < mk[3] < umass) and (lrt < mk[4] < urt):
-                   strg = key, rec[key] 
-                   comp.append(strg)
+    # Looping through real samples.
+    for sample in samples:
+        # Find all close triggers in the MGF.
+        trigger = mgf.closest(sample.mz, sample.retention, mz_tol,
+                              retention_tol)
 
-           if len(comp) > 0:
-               nwdic[cl] = comp
+        if trigger is None:
+            continue
 
-    return nwdic 
+        # Add all of the ion masses
+        for ion in trigger.ions:
+            if neutral:
+                # get neutral loss
+                ion_mz = round(ion.mz - trigger.pepmass.mz, 5)
+            else:
+                ion_mz = ion.mz
 
-
-def remove_redundancy(ndic, negloss):
-    """ Selects the closest trigger mass to the real sample mass 
-    Prints the best trigger id and ion list 
-    """
-
-    tmpdic ={}
-    for cpkey in ndic: # for each real sample id
-        km = cpkey.split("_")
-        kms = float(km[3].strip('m/z')) # real sample mass
-        #dms = abs(kms - 0.002)
-        dms = 0.002
-        krt = km[4].strip('RT')
-        krt = float(krt) * 60 # convert retention time to seconds
-        krt = int(krt)   # real sample retention time
-        #drt = abs(krt-5)
-        drt = 5
-        best = ndic[cpkey] # list of trigger matches (id and ions list)
-        kval = []
-        if len(ndic[cpkey]) == 1: # if only one trigger match
-            for ion in ndic[cpkey]:
-                one = ion[1] # get ion list
-                bestion = ion[0].strip() # get trigger id (QE..)
-                tm = bestion.split("_")
-                tm[3] = tm[3].strip('m/z')
-                for ion1 in one: # foreach ion
-                    if negloss:
-                        ion1 = round(float(ion1) - float(tm[3]), 5) # get negative loss
-                    else: #options
-                        ion1 = float(ion1.strip())
-                    fele = bestion, ion1
-                    tmpdic[fele] = cpkey
-        else:
-            for ls in ndic[cpkey]: # for each trigger match
-                y = ls[0] # get trigger id
-                vm = y.split('_')
-                vms = float(vm[3]) # get trigger mass
-                vrt = int(vm[4]) # get trigger retention time
-
-                # find the closest trigger to the sample
-                if (abs(kms - vms) < dms) and (abs(krt - vrt) < drt): 
-                    dms = abs(kms - vms) # new distance of trigger mass to sample
-                    drt = abs(krt - vrt) # new distance of trigger retention time to sample
-                    best = ls # set best trigger match
-
-            multi = best[1] # get ion list
-            for bion in multi: # for each ion 
-                bion1 = float(bion.strip())
-                bestlab = best[0].strip() # get trigger label
-                btm = bestlab.split("_") # get trigger id (QE..)
-                btm[3] = float(btm[3].strip('m/z'))
-                if negloss:
-                    bion1 = round(bion1 - btm[3],5) # get negative loss
-                else:
-                    bion1 = bion1
-
-                fele1 = bestlab, bion1
-                tmpdic[fele1] = cpkey
-
-    flip = {}
-    for k, v in tmpdic.items():
-        if k not in flip:
-            flip[k] = [v]
-        else:
-            flip[k].append(v)
-
-    alist = []
-    for key, value in flip.items():
-        #print(key[0],"\t",key[1],sep='')
-        alist.append((key[0], key[1]))
+            record = (
+                "{}_{}_{}".format(trigger.title, trigger.pepmass.mz, trigger.retention),
+                ion_mz
+                )
+            output.append(record)
 
     # Return the table, sorted by mz
-    # Columns are (sample, mz)
-
-    #Now remove redundancy and print best trigger ion list
-
-    table = pd.DataFrame(alist, columns=['sample', 'mz'])
+    table = pd.DataFrame(output, columns=['sample', 'mz'])
     table.sort_values(by='mz', inplace=True)
+    table.reset_index(drop=True, inplace=True)
     return table
-
-
-def main():
-
-    parser = argparse.ArgumentParser(
-        description="Process MGF file into appropriate input for biodendro."
-        )
-
-    parser.add_argument(
-        "mgf",
-        help="MGF input file (file1.mgf)",
-        type=str
-        )
-    parser.add_argument(
-        "components",
-        help="Listed components file (file2.txt)",
-        type=str
-        )
-
-    parser.add_argument(
-        "-n", "--negative",
-        help="Apply negative loss.",
-        action="store_true"
-        )
-
-    parser.add_argument(
-        "-o", "--output",
-        default="out.csv",
-        help=("Path to write output to. XLSX output uses this filename, "
-              "replacing the extension.")
-        )
-    args = parser.parse_args()
-
-    #print(args.mgf, args.components, args.negative)
-
-
-    #Open the trigger data <file>.msg
-    with open(args.mgf, 'r') as handle:
-        rec = get_record(handle)
-
-
-    #Open the sample list <file>.csv
-    with open(args.components, 'r') as handle:
-        ndic = get_csv_record(handle, rec)
-
-    negloss = args.negative
-
-    #Now remove redundancy and print best trigger ion list
-    table = remove_redundancy(ndic, negloss)
-
-    table.to_csv(args.output, sep="\t", index=False)
-
-    # Write out an excel file too
-    xlsx_path = os.path.splitext(args.output)[0] + ".xlsx"
-    table.to_excel(xlsx_path, index=False)
-
-if __name__ == "__main__":
-    main()

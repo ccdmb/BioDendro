@@ -120,7 +120,7 @@ setup(
     # pip to create the appropriate form of executable for the target platform.
     entry_points={
         'console_scripts': [
-            'preprocess=BioDendro.preprocess:main',
+            'BioDendro=BioDendro:main',
         ],
     },
 )
