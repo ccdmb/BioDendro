@@ -104,7 +104,7 @@ def pipeline(
     _ = tree.iplot(filename=out_html, width=width, height=height)
 
     printer("Finished")
-    return
+    return tree
 
 def main():
     parser = argparse.ArgumentParser(
