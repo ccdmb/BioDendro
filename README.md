@@ -35,7 +35,7 @@ plotly.offline.init_notebook_mode(connected=True) # for visualising plot inline
 plotly.offline.iplot(k, filename='simple_dendrogram')
 
 ```
-### Explore BioDendro pipeline arguements 
+### Explore BioDendro pipeline arguments 
 
 ```
 # listed are all BioDendro pipeline arguments
