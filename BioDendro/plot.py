@@ -98,7 +98,7 @@ class _Dendrogram(object):
     """Refer to FigureFactory.create_dendrogram() for docstring."""
 
     def __init__(self, X,orientation='bottom', labels=None, colorscale=None,
-                 width="100%", height="100%", xaxis='xaxis', yaxis='yaxis',
+                 width=500, height=400, xaxis='xaxis', yaxis='yaxis',
                  distfun=lambda x: scs.distance.pdist(x, metric='jaccard'), #testing jaccard!
                  linkagefun=lambda x: sch.linkage(x, method='complete'), #testing!
                  hovertext=None,color_threshold=None):
