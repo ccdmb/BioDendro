@@ -82,6 +82,7 @@ setup(
     # The way that the PCA model is stored is not necessarily stable across 
     # versions of scikit-learn, so I have to keep it fixed.
     install_requires=[
+        'wheel', # Required for older plotly install
         'numpy',
         'pandas',
         'scipy',
@@ -89,7 +90,7 @@ setup(
         'scikit-learn',
         'xlrd',
         'xlsxwriter',
-        'plotly',
+        'plotly==2.7.0',
         'pillow', # Provides PIL
         ],
 
