@@ -4,10 +4,7 @@ Preprocess contains methods for parsing and manipulating mass spec files.
 
 import os
 import re
-import sys
-import argparse
 from bisect import bisect_left
-from collections import defaultdict
 from collections import namedtuple
 
 import pandas as pd
@@ -75,14 +72,10 @@ class MGF(object):
                     or record.retention >= upper_retention):
                 continue
 
-            dist_mz = abs(mz - record.pepmass.mz)
             dist_retention = abs(retention - record.retention)
 
             # find the closest trigger to the sample
-            if dist_mz < min_dist_mz and dist_retention < min_dist_retention:
-                # new distance of trigger mass to sample
-                min_dist_mz = dist_mz
-                # new distance of trigger retention time to sample
+            if dist_retention < min_dist_retention:
                 min_dist_retention = dist_retention
                 # set best trigger match
                 closest = record
@@ -301,6 +294,7 @@ def remove_redundancy(samples, mgf, mz_tol=0.002, retention_tol=5,
                               retention_tol)
 
         if trigger is None:
+            print("NUP", sample.__dict__)
             continue
 
         # Add all of the ion masses
