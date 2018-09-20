@@ -294,7 +294,6 @@ def remove_redundancy(samples, mgf, mz_tol=0.002, retention_tol=5,
                               retention_tol)
 
         if trigger is None:
-            print("NUP", sample.__dict__)
             continue
 
         # Add all of the ion masses
