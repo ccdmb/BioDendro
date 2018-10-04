@@ -313,8 +313,10 @@ class Tree(object):
 
         for cluster, subtab in df.groupby(clusters):
             nmembers = subtab.shape[0]
-
-            subtab = subtab.loc[:, subtab.any(axis=0)]
+            
+            #removing cluster number from output
+            subtab = subtab.loc[:, subtab.any()]
+            #subtab = subtab.loc[:, subtab.any(axis=0)]
             csv_filename = pjoin(path,
                     "cluster_{}_{}.csv".format(cluster, nmembers))
             subtab.to_csv(csv_filename, sep="\t")
