@@ -7,6 +7,7 @@ import re
 from bisect import bisect_left
 from collections import namedtuple
 
+import numpy as np
 import pandas as pd
 
 
@@ -24,8 +25,8 @@ class MGF(object):
 
 
     @classmethod
-    def parse(cls, handle):
-        records = MGFRecord.parse(handle)
+    def parse(cls, handle, scaling = False, filtering = False, eps=0.0):
+        records = MGFRecord.parse(handle, scaling = scaling, filtering = filtering, eps=eps)
         records.sort(key=lambda x: x.pepmass.mz)
         return cls(records)
 
@@ -161,19 +162,90 @@ class MGFRecord(object):
             intensity = float(string[1].strip())
         else:
             intensity = None
-
         # NB any other values in here are ignored by specification.
         return Ion(mz, intensity)
 
-
+    @staticmethod
+    def _get_altered_ions(ions, scaling, filtering, eps=0.0):
+        if scaling == False and filtering == False:
+            return ions # Nothing is done
+        else:
+            mz = []
+            intensity = []
+            ret_mz = []
+            ret_inten = []
+            ret_ions = []
+            for i in ions: # extract the mz and intensities in lists
+                mz.append(i.mz)
+                intensity.append(i.intensity)
+            # Converting into np array with None values converted to np.nan
+            np_intensity = np.array(intensity, dtype=np.float)
+            if(np.isnan(np_intensity).all()): # If all intensities are nan
+                return ions
+            else:
+                max_inten = max(np_intensity)
+                if max_inten > 0.0:
+                    scaled_intensity = np_intensity/max_inten
+                else:
+                    scaled_intensity = np_intensity
+                    
+                # 1. Only filtering using eps value
+                if scaling == False and filtering == True:
+                    if(np.isnan(np_intensity).any()):
+                        for k, inten in enumerate(scaled_intensity):
+                            if np.isnan(inten):
+                                ret_inten.append(None)
+                                ret_mz.append(mz[k])
+                            else:
+                                if inten >= eps:
+                                    ret_inten.append(intensity[k])
+                                    ret_mz.append(mz[k])
+                    else:
+                        ret_inten = np_intensity[scaled_intensity >= eps].tolist()
+                        ret_mz = (np.array(mz)[scaled_intensity >= eps]).tolist()
+                elif scaling == True and filtering == False:
+                    if(np.isnan(np_intensity).any()):
+                        for k, inten in enumerate(scaled_intensity):
+                            if np.isnan(inten):
+                                ret_inten.append(None)
+                                ret_mz.append(mz[k])
+                            else:
+                                ret_inten.append(scaled_intensity[k])
+                                ret_mz.append(mz[k])
+                    else:
+                        ret_inten = scaled_intensity.tolist() # need to change nans into None
+                        ret_mz = mz
+                else:
+                    if(np.isnan(np_intensity).any()):
+                        for k, inten in enumerate(scaled_intensity):
+                            if np.isnan(inten):
+                                ret_inten.append(None)
+                                ret_mz.append(mz[k])
+                            else:
+                                if inten >= eps:
+                                    ret_inten.append(scaled_intensity[k])
+                                    ret_mz.append(mz[k])
+                    else:
+                        ret_inten = (scaled_intensity[scaled_intensity >= eps]).tolist()
+                        ret_mz = (np.array(mz)[scaled_intensity >= eps]).tolist()
+                    
+                for j in range(len(ret_inten)):
+                    ion = Ion(ret_mz[j], ret_inten[j])
+                    ret_ions.append(ion)
+        return ret_ions
+        
+                
+            
+            
+        
     @classmethod
-    def _read(cls, lines):
+    def _read(cls, lines, scaling = False, filtering = False, eps = 0.0):
         title = None
         retention = None
         pepmass = None
         charge = None
         ions = []
-
+        ret_ions = []
         for line in lines:
             if line.startswith("TITLE"):
                 title = cls._get_title(line)
@@ -195,12 +267,14 @@ class MGFRecord(object):
                 # Eventually need to wrap this in try... except
                 ion = cls._get_ion(line)
                 ions.append(ion)
+                
+            ret_ions = MGFRecord._get_altered_ions(ions, scaling=scaling, filtering=filtering, eps=eps)
 
-        return cls(title, retention, pepmass, charge, ions)
+        return cls(title, retention, pepmass, charge, ret_ions)
 
 
     @classmethod
-    def parse(cls, handle):
+    def parse(cls, handle, scaling = False, filtering = False, eps=0.0):
         """ Parses an MGF file into a list of MGF objects.
 
         keyword arguments:
@@ -213,7 +287,7 @@ class MGFRecord(object):
         block = []
         for line in handle:
             if line.startswith("END"):
-                output.append(cls._read(block))
+                output.append(cls._read(block, scaling = scaling, filtering = filtering, eps=eps))
                 block = []
                 in_block = False
 

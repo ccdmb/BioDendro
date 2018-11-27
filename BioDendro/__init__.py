@@ -30,6 +30,9 @@ def pipeline(
         width=900,
         height=400,
         quiet=False,
+        scaling=False,
+        filtering=False,
+        eps=0.0,
         **kwargs
         ):
     """ Runs the default BioDendro pipeline. """
@@ -74,7 +77,7 @@ def pipeline(
 
     #Open the trigger data <file>.msg
     with open(mgf_path, 'r') as handle:
-        mgf = MGF.parse(handle)
+        mgf = MGF.parse(handle, scaling=scaling, filtering=filtering, eps=eps)
 
     # Customised MGF title handler.
     # TODO: This title filter will fail for some mgf title fields.
