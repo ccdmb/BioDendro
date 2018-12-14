@@ -5,20 +5,19 @@ of mass spec data.
 
 from os.path import join as pjoin
 
-import pandas as pd
 import numpy as np
-import scipy as sp
 from scipy.cluster.hierarchy import linkage
 from scipy.cluster.hierarchy import fcluster
 from scipy.spatial.distance import pdist
 
 import matplotlib
 matplotlib.use("AGG")
-from matplotlib import pyplot as plt
 
-import plotly
+from matplotlib import pyplot as plt  # noqa
+import plotly  # noqa
 
-from BioDendro.plot import create_dendro
+from BioDendro.plot import create_dendro  # noqa
+
 
 class Tree(object):
 
@@ -53,7 +52,6 @@ class Tree(object):
 
         return
 
-
     def fit(self, df):
         """ Bins the data and generates the tree.
 
@@ -75,7 +73,6 @@ class Tree(object):
         self.cut_tree(cutoff)
         return
 
-
     @staticmethod
     def _bin_name(arr):
         return "{:.4f}_{:.4f}_{:.4f}".format(
@@ -83,7 +80,6 @@ class Tree(object):
             np.around(np.min(arr), 4),
             np.around(np.max(arr), 4)
             )
-
 
     @staticmethod
     def _bin_starts(arr, threshold):
@@ -101,7 +97,6 @@ class Tree(object):
         diffs[0] = threshold + 1
         bin_starts = np.where(diffs >= threshold)[0]
         return bin_starts
-
 
     @classmethod
     def _bin_names(cls, column, starts):
@@ -127,7 +122,7 @@ class Tree(object):
 
         # We'll keep track of the name lengths so we can convert to
         # C-strings later
-        longest_name_len = 0
+        # longest_name_len = 0
 
         i = 0
         # Starting at 1 because we need i - 1. Which will always be 0.
@@ -142,8 +137,8 @@ class Tree(object):
             bin_name = cls._bin_name(arr)
 
             # Update bin name lengths
-            if len(bin_name) > longest_name_len:
-                longest_bin_len = len(bin_name)
+            # if len(bin_name) > longest_name_len:
+            #     longest_bin_len = len(bin_name)
 
             # assign name to elements in this empty bin.
             bins[bin_range] = bin_name
@@ -155,13 +150,13 @@ class Tree(object):
         arr = column[bin_range]
 
         bin_name = cls._bin_name(arr)
-        if len(bin_name) > longest_name_len:
-            longest_bin_len = len(bin_name)
+        # if len(bin_name) > longest_name_len:
+        #    longest_bin_len = len(bin_name)
         bins[bin_range] = bin_name
 
         # Return the bin names. And convert the array type to a C-string with
         # the maximum number of characters required.
-        #return bins.astype("|S{}".format(longest_bin_len))
+        # return bins.astype("|S{}".format(longest_bin_len))
 
         # Uncomment above line if C string performance is necessary.
         # But you would need to decode the strings from binary to get them to
@@ -182,12 +177,10 @@ class Tree(object):
             contain duplicates.
         index_col -- The column to use from df.
         """
-        present = np.ones(len(df), dtype=np.bool)
         df["present"] = True
         df["bins"] = bins
         return df.pivot_table(index=index_col, columns="bins",
                               values="present", fill_value=False)
-
 
     def _bin(self, threshold=None):
         """ Get names of the bins and assign to mz rows.
@@ -214,7 +207,6 @@ class Tree(object):
         self.onehot_df = self._pivot(df, bins, "sample")
         return
 
-
     def _hclust(self, clustering_method=None):
         """ Hierarchically cluster the one hot encoded dataframe.
 
@@ -233,12 +225,9 @@ class Tree(object):
         if clustering_method is None:
             clustering_method = self.clustering_method
 
-
-        df = self.df.copy()
         self.tree = linkage(self.onehot_df, method="complete",
                             metric=clustering_method)
         return
-
 
     def cut_tree(self, cutoff=None):
         """ Selects clusters from the clustered tree based on distance.
@@ -263,7 +252,6 @@ class Tree(object):
 
         self.clusters = fcluster(self.tree, cutoff, criterion='distance')
         return
-
 
     @staticmethod
     def _plot_bin_freqs(df, height=4.5, width_base=1, width_multiplier=0.2):
@@ -300,7 +288,6 @@ class Tree(object):
         fig.tight_layout()
         return fig, ax
 
-
     def write_summaries(self, path="results"):
         """ Write summary tables and plots to a directory.
 
@@ -313,12 +300,12 @@ class Tree(object):
 
         for cluster, subtab in df.groupby(clusters):
             nmembers = subtab.shape[0]
-            
+
             # axis=1 cluster number not in csv and png output
             subtab = subtab.loc[:, subtab.any(axis=1)]
-            
+
             csv_filename = pjoin(path,
-                    "cluster_{}_{}.csv".format(cluster, nmembers))
+                                 "cluster_{}_{}.csv".format(cluster, nmembers))
             subtab.to_csv(csv_filename, sep="\t")
 
             fig, ax = self._plot_bin_freqs(subtab)
@@ -336,7 +323,6 @@ class Tree(object):
         df = df[["cluster"] + [c for c in df.columns if c != "cluster"]]
         df.to_csv(filename, sep="\t")
         return
-
 
     def iplot(
             self,
@@ -370,7 +356,6 @@ class Tree(object):
 
         if cutoff is None:
             cutoff = self.cutoff
-
 
         dendro = create_dendro(
             df,
