@@ -288,6 +288,13 @@ class Tree(object):
         fig.tight_layout()
         return fig, ax
 
+    @staticmethod
+    def _exclude_false_columns(table):
+        """ Filter out columns that are all false. """
+
+        # any(axis=0) at least on sample has True value for each column.
+        return table.loc[:, table.any(axis=0)]
+
     def write_summaries(self, path="results"):
         """ Write summary tables and plots to a directory.
 
@@ -301,8 +308,8 @@ class Tree(object):
         for cluster, subtab in df.groupby(clusters):
             nmembers = subtab.shape[0]
 
-            # axis=1 cluster number not in csv and png output
-            subtab = subtab.loc[:, subtab.any(axis=1)]
+            # Filter out columns that are all false for ease of visualisation.
+            subtab = self._exclude_false_columns(subtab)
 
             csv_filename = pjoin(path,
                                  "cluster_{}_{}.csv".format(cluster, nmembers))
