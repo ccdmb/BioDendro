@@ -58,6 +58,9 @@ def pipeline(
              "- output html dendrogram = {html}\n"
              "- dendrogram figure width = {x}\n"
              "- dendrogram figure height = {y}\n"
+             "- scaling = {scal}\n"
+             "- filtering = {fil}\n"
+             "- eps = {eps}\n"
              "\n").format(
                  name=__name__,
                  version=__version__,
@@ -72,6 +75,9 @@ def pipeline(
                  html=out_html,
                  x=width,
                  y=height,
+                 scal=scaling,
+                 fil=filtering,
+                 eps=eps,
                  )
     )
 
@@ -199,6 +205,26 @@ def main():
         default=False
         )
 
+    parser.add_argument(
+        "-s", "--scaling",
+        help="Flag to scale the m/z intensities values",
+        action="store_true",
+        default=False
+        )
+
+    parser.add_argument(
+        "-f", "--filtering",
+        help="Flag to filter the m/z intensities values",
+        action="store_true",
+        default=False
+        )
+
+    parser.add_argument(
+        "-e", "--eps",
+        help="Intensity threshold for filtering, set value between 0.0-1.0",
+        type=float,
+        default=0.6
+        )
 
     args = parser.parse_args()
     pipeline(mgf_path=args.mgf, components_path=args.components, **args.__dict__)
