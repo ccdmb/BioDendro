@@ -31,7 +31,7 @@ class MGF(object):
         return cls(records)
 
 
-    def closest(self, mz, retention, mz_tol=0.002, retention_tol=5):
+    def closest(self, mz, retention, mz_tol, retention_tol):
         """ Find the closest trigger match to a mz and retention value.
 
         Keyword arguments:

@@ -33,6 +33,8 @@ def pipeline(
         scaling=False,
         filtering=False,
         eps=0.0,
+        mz_tol=0.002,
+        retention_tol=5,
         **kwargs
         ):
     """ Runs the default BioDendro pipeline. """
@@ -61,6 +63,8 @@ def pipeline(
              "- scaling = {scal}\n"
              "- filtering = {fil}\n"
              "- eps = {eps}\n"
+             "- mz_tolerance = {mz_tol}\n"
+             "- retention_tolerance = {retention_tol}\n"
              "\n").format(
                  name=__name__,
                  version=__version__,
@@ -78,6 +82,8 @@ def pipeline(
                  scal=scaling,
                  fil=filtering,
                  eps=eps,
+                 mz_tol=mz_tol,
+                 retention_tol=retention_tol,
                  )
     )
 
@@ -96,7 +102,7 @@ def pipeline(
 
     #Now remove redundancy and print best trigger ion list
     printer("Processing inputs")
-    table = remove_redundancy(components, mgf, neutral=neutral)
+    table = remove_redundancy(components, mgf, neutral=neutral, mz_tol=mz_tol, retention_tol=retention_tol )
 
     # Write out an excel file too
     table.to_excel(processed, index=False)
@@ -224,6 +230,19 @@ def main():
         help="Intensity threshold for filtering, set value between 0.0-1.0",
         type=float,
         default=0.6
+        )
+    parser.add_argument(
+        "-mz_tol", "--mz_tol",
+        help="Mass tolerance to remove redundancy, default is 0.002",
+        type=float,
+        default=0.002
+        )
+
+    parser.add_argument(
+        "-retention_tol", "--retention_tol",
+        help="Retention time tolerance to remove redundancy, default is 5 secs",
+        type=float,
+        default=5
         )
 
     args = parser.parse_args()
