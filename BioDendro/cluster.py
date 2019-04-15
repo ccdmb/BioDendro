@@ -312,8 +312,8 @@ class Tree(object):
             subtab = self._exclude_false_columns(subtab)
 
             csv_filename = pjoin(path,
-                                 "cluster_{}_{}.csv".format(cluster, nmembers))
-            subtab.to_csv(csv_filename, sep="\t")
+                                 "cluster_{}_{}.xlsx".format(cluster, nmembers))
+            subtab.to_excel(csv_filename)
 
             fig, ax = self._plot_bin_freqs(subtab)
             fig.suptitle("Cluster {} with {} members".format(cluster,
@@ -325,10 +325,10 @@ class Tree(object):
             # Prevents plotting these plots in interactive mode.
             plt.close()
 
-        filename = pjoin(path, "clusters.csv")
+        filename = pjoin(path, "clusters.xlsx")
         df["cluster"] = clusters
         df = df[["cluster"] + [c for c in df.columns if c != "cluster"]]
-        df.to_csv(filename, sep="\t")
+        df.to_excel(filename)
         return
 
     def iplot(

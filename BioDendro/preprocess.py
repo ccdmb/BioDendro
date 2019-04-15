@@ -58,7 +58,7 @@ class MGF(object):
 
         # Initialise the minimum mass distance
         # Unrealistic number to guarantee match
-        min_dist_mz = float("inf")
+        # min_dist_mz = float("inf")
         # Initialise minimum retention distance
         min_dist_retention = float("inf")
 
@@ -188,7 +188,7 @@ class MGFRecord(object):
                     scaled_intensity = np_intensity/max_inten
                 else:
                     scaled_intensity = np_intensity
-                    
+
                 # 1. Only filtering using eps value
                 if scaling == False and filtering == True:
                     if(np.isnan(np_intensity).any()):
@@ -228,16 +228,16 @@ class MGFRecord(object):
                     else:
                         ret_inten = (scaled_intensity[scaled_intensity >= eps]).tolist()
                         ret_mz = (np.array(mz)[scaled_intensity >= eps]).tolist()
-                    
+
                 for j in range(len(ret_inten)):
                     ion = Ion(ret_mz[j], ret_inten[j])
                     ret_ions.append(ion)
         return ret_ions
-        
-                
-            
-            
-        
+
+
+
+
+
     @classmethod
     def _read(cls, lines, scaling = False, filtering = False, eps = 0.0):
         title = None
@@ -267,7 +267,7 @@ class MGFRecord(object):
                 # Eventually need to wrap this in try... except
                 ion = cls._get_ion(line)
                 ions.append(ion)
-                
+
             ret_ions = MGFRecord._get_altered_ions(ions, scaling=scaling, filtering=filtering, eps=eps)
 
         return cls(title, retention, pepmass, charge, ret_ions)
@@ -317,10 +317,11 @@ def split_msms_title(line):
 
 class SampleRecord(object):
 
-    def __init__(self, mz, retention):
+    def __init__(self, mz, retention, original):
         """ A simple class to store 'real samples'. """
         self.mz = mz
         self.retention = retention
+        self.original = original
         return
 
 
@@ -334,7 +335,7 @@ class SampleRecord(object):
 
         # Get real sample retention time in seconds.
         retention = float(sline[4].lstrip('RT')) * 60
-        return cls(mz, retention)
+        return cls(mz, retention, line.strip())
 
 
     @classmethod
@@ -379,13 +380,16 @@ def remove_redundancy(samples, mgf, mz_tol=0.002, retention_tol=5,
                 ion_mz = ion.mz
 
             record = (
-                "{}_{}_{}".format(trigger.title, trigger.pepmass.mz, trigger.retention),
+                sample.original,
+                "{}_{}_{}".format(trigger.title,
+                                  trigger.pepmass.mz,
+                                  trigger.retention),
                 ion_mz
                 )
             output.append(record)
 
     # Return the table, sorted by mz
-    table = pd.DataFrame(output, columns=['sample', 'mz'])
+    table = pd.DataFrame(output, columns=['component', 'sample', 'mz'])
     table.sort_values(by='mz', inplace=True)
     table.reset_index(drop=True, inplace=True)
     return table
