@@ -23,13 +23,16 @@ class MGF(object):
         self.mzs = [r.pepmass.mz for r in records]
         return
 
-
     @classmethod
-    def parse(cls, handle, scaling = False, filtering = False, eps=0.0):
-        records = MGFRecord.parse(handle, scaling = scaling, filtering = filtering, eps=eps)
+    def parse(cls, handle, scaling=False, filtering=False, eps=0.0):
+        records = MGFRecord.parse(
+            handle,
+            scaling=scaling,
+            filtering=filtering,
+            eps=eps
+        )
         records.sort(key=lambda x: x.pepmass.mz)
         return cls(records)
-
 
     def closest(self, mz, retention, mz_tol=0.002, retention_tol=5):
         """ Find the closest trigger match to a mz and retention value.
@@ -102,7 +105,6 @@ class MGFRecord(object):
         self.ions = ions
         return
 
-
     def __str__(self):
         cls = self.__class__.__name__
         template = ("{}(title='{}', retention={}, pepmass={}, "
@@ -110,16 +112,13 @@ class MGFRecord(object):
         return template.format(cls, self.title, self.retention, self.pepmass,
                                self.charge, self.ions)
 
-
     def __repr__(self):
         return str(self)
 
-
     @staticmethod
     def _split_kvline(key, string):
-        """ Takes a field key and string and removes the key and equals sign """
+        """ Takes a field key and string, removes the key and equals sign """
         return string[len(key) + 1:].strip()
-
 
     @classmethod
     def _get_title(cls, string, key="TITLE"):
@@ -130,13 +129,11 @@ class MGFRecord(object):
         """
         return cls._split_kvline(key, string)
 
-
     @classmethod
     def _get_pepmass(cls, string, key="PEPMASS"):
         """ Strips key from mass and returns an Ion object. """
         pepmass = cls._split_kvline(key, string)
         return cls._get_ion(pepmass)
-
 
     @classmethod
     def _get_retention(cls, string, key="RTINSECONDS"):
@@ -148,7 +145,6 @@ class MGFRecord(object):
     def _get_charge(cls, string, key="CHARGE"):
         """ Not fully implemented. Just basic support. """
         return cls._split_kvline(key, string)
-
 
     @classmethod
     def _get_ion(cls, string):
@@ -167,20 +163,20 @@ class MGFRecord(object):
 
     @staticmethod
     def _get_altered_ions(ions, scaling, filtering, eps=0.0):
-        if scaling == False and filtering == False:
-            return ions # Nothing is done
+        if not scaling and not filtering:
+            return ions  # Nothing is done
         else:
             mz = []
             intensity = []
             ret_mz = []
             ret_inten = []
             ret_ions = []
-            for i in ions: # extract the mz and intensities in lists
+            for i in ions:  # extract the mz and intensities in lists
                 mz.append(i.mz)
                 intensity.append(i.intensity)
             # Converting into np array with None values converted to np.nan
             np_intensity = np.array(intensity, dtype=np.float)
-            if(np.isnan(np_intensity).all()): # If all intensities are nan
+            if np.isnan(np_intensity).all():  # If all intensities are nan
                 return ions
             else:
                 max_inten = max(np_intensity)
@@ -190,8 +186,8 @@ class MGFRecord(object):
                     scaled_intensity = np_intensity
 
                 # 1. Only filtering using eps value
-                if scaling == False and filtering == True:
-                    if(np.isnan(np_intensity).any()):
+                if not scaling and not filtering:
+                    if np.isnan(np_intensity).any():
                         for k, inten in enumerate(scaled_intensity):
                             if np.isnan(inten):
                                 ret_inten.append(None)
@@ -202,8 +198,8 @@ class MGFRecord(object):
                                     ret_mz.append(mz[k])
                     else:
                         ret_inten = np_intensity[scaled_intensity >= eps].tolist()
-                        ret_mz = (np.array(mz)[scaled_intensity >= eps]).tolist()
-                elif scaling == True and filtering == False:
+                        ret_mz = np.array(mz)[scaled_intensity >= eps].tolist()
+                elif not scaling and not filtering:
                     if(np.isnan(np_intensity).any()):
                         for k, inten in enumerate(scaled_intensity):
                             if np.isnan(inten):
@@ -213,10 +209,10 @@ class MGFRecord(object):
                                 ret_inten.append(scaled_intensity[k])
                                 ret_mz.append(mz[k])
                     else:
-                        ret_inten = scaled_intensity.tolist() # need to change nans into None
+                        ret_inten = scaled_intensity.tolist()  # need to change nans into None
                         ret_mz = mz
                 else:
-                    if(np.isnan(np_intensity).any()):
+                    if np.isnan(np_intensity).any():
                         for k, inten in enumerate(scaled_intensity):
                             if np.isnan(inten):
                                 ret_inten.append(None)
@@ -226,20 +222,16 @@ class MGFRecord(object):
                                     ret_inten.append(scaled_intensity[k])
                                     ret_mz.append(mz[k])
                     else:
-                        ret_inten = (scaled_intensity[scaled_intensity >= eps]).tolist()
-                        ret_mz = (np.array(mz)[scaled_intensity >= eps]).tolist()
+                        ret_inten = scaled_intensity[scaled_intensity >= eps].tolist()
+                        ret_mz = np.array(mz)[scaled_intensity >= eps].tolist()
 
                 for j in range(len(ret_inten)):
                     ion = Ion(ret_mz[j], ret_inten[j])
                     ret_ions.append(ion)
         return ret_ions
 
-
-
-
-
     @classmethod
-    def _read(cls, lines, scaling = False, filtering = False, eps = 0.0):
+    def _read(cls, lines, scaling=False, filtering=False, eps=0.0):
         title = None
         retention = None
         pepmass = None
@@ -268,13 +260,17 @@ class MGFRecord(object):
                 ion = cls._get_ion(line)
                 ions.append(ion)
 
-            ret_ions = MGFRecord._get_altered_ions(ions, scaling=scaling, filtering=filtering, eps=eps)
+            ret_ions = MGFRecord._get_altered_ions(
+                ions,
+                scaling=scaling,
+                filtering=filtering,
+                eps=eps
+            )
 
         return cls(title, retention, pepmass, charge, ret_ions)
 
-
     @classmethod
-    def parse(cls, handle, scaling = False, filtering = False, eps=0.0):
+    def parse(cls, handle, scaling=False, filtering=False, eps=0.0):
         """ Parses an MGF file into a list of MGF objects.
 
         keyword arguments:
@@ -287,7 +283,14 @@ class MGFRecord(object):
         block = []
         for line in handle:
             if line.startswith("END"):
-                output.append(cls._read(block, scaling = scaling, filtering = filtering, eps=eps))
+                output.append(
+                    cls._read(
+                        block,
+                        scaling=scaling,
+                        filtering=filtering,
+                        eps=eps
+                    )
+                )
                 block = []
                 in_block = False
 
@@ -307,7 +310,6 @@ def split_msms_title(line):
     regex = re.compile(r"\\|/")
     sline = line.split(" ")
 
-
     # Using a regex to spit on file paths to handle
     # different OS's
     filename = regex.split(sline[1])[-1]
@@ -324,7 +326,6 @@ class SampleRecord(object):
         self.original = original
         return
 
-
     @classmethod
     def _read(cls, line, sep="_"):
         """ Read a line and construct new object. """
@@ -336,7 +337,6 @@ class SampleRecord(object):
         # Get real sample retention time in seconds.
         retention = float(sline[4].lstrip('RT')) * 60
         return cls(mz, retention, line.strip())
-
 
     @classmethod
     def parse(cls, handle):
@@ -352,6 +352,14 @@ class SampleRecord(object):
             output.append(cls._read(line))
 
         return output
+
+    def __str__(self):
+        cls = self.__class__.__name__
+        template = "{}(mz={}, retention={}, original='{}')"
+        return template.format(cls, self.mz, self.retention, self.original)
+
+    def __repr__(self):
+        return str(self)
 
 
 def remove_redundancy(samples, mgf, mz_tol=0.002, retention_tol=5,
