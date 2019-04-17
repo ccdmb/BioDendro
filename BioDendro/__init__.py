@@ -131,7 +131,7 @@ def pipeline(
         handle.write(params_file)
 
     printer("Writing output html dendrogram")
-    _ = tree.iplot(
+    _ = tree.plot(
         filename=pjoin(results_dir, out_html),
         width=width,
         height=height

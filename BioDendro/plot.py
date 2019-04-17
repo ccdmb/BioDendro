@@ -1,3 +1,7 @@
+"""
+Plots a tree object as a dendrogram for visualisation with plotly.
+"""
+
 from itertools import repeat
 from copy import deepcopy
 import re
@@ -8,7 +12,7 @@ import numpy as np
 from scipy.cluster import hierarchy as sph
 
 
-def idendrogram(
+def dendrogram(
     tree,
     orientation='bottom',
     colorscale=None,
@@ -90,9 +94,46 @@ def idendrogram(
         ori = orientation[0]  # This spec used just l, r, t, or b
         layout["margin"] = {ori: int(margin_scalar) * (longest_label + 1)}
 
-    data = dd_traces
+    if hovertext is None:
+        cluster_map = dict(zip(tree.onehot_df.index, tree.clusters))
+        data = _format_cluster_hovertexts(dd_traces, layout, cluster_map)
+    else:
+        data = dd_traces
 
     return graph_objs.Figure(data, layout)
+
+
+def _format_cluster_hovertexts(data, layout, cluster_map):
+    """ Updates data elements to add hover text for cluster names. """
+
+    labels = dict(zip(layout["xaxis"]["tickvals"],
+                      layout["xaxis"]["ticktext"]))
+    hover_labs = {
+        k: "cluster: {}, component: {}".format(cluster_map[v], v)
+        for k, v
+        in labels.items()
+    }
+
+    out = []
+    for scatter in data:
+        # Avoid side-effects just in case.
+        scatter = deepcopy(scatter)
+        xaxis = scatter["xaxis"]
+        yaxis = scatter["yaxis"]
+        textl = None
+        textr = None
+
+        # If left is at 0.
+        if scatter[yaxis][0] == 0.0:
+            textl = hover_labs.get(scatter[xaxis][0], None)
+
+        if scatter[yaxis][3] == 0.0:
+            textr = hover_labs.get(scatter[xaxis][3], None)
+
+        scatter["text"] = [textl, textl, textr, textr]
+        out.append(scatter)
+
+    return out
 
 
 def _get_sign(orientation, xaxis, yaxis):

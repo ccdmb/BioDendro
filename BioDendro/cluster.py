@@ -8,17 +8,14 @@ from os.path import join as pjoin
 import numpy as np
 from scipy.cluster.hierarchy import linkage
 from scipy.cluster.hierarchy import fcluster
-from scipy.spatial.distance import pdist
 
 import matplotlib
 matplotlib.use("AGG")
 
 from matplotlib import pyplot as plt  # noqa
-
 import plotly  # noqa
-from plotly import figure_factory as ff  # noqa
 
-#from BioDendro.plot import create_dendro  # noqa
+from BioDendro.plot import dendrogram  # noqa
 
 
 class Tree(object):
@@ -343,63 +340,56 @@ class Tree(object):
         df.to_excel(filename)
         return
 
-    def iplot(
+    def plot(
         self,
         filename=None,
-        cutoff=None,
-        clustering_method=None,
         width=900,
-        height=400
+        height=800,
+        fontsize=12,
     ):
         """ Plots an interactive tree from these data using plotly.
 
         Keyword arguments:
         filename -- The path to save the plotly html file. If None, don't write
         the plot.
-        cutoff -- See __init__. If None will inherit value from object.
-        clustering_method -- As for cutoff.
         width -- Width of the plot in pixels.
         height -- Height of the plot in pixels.
+        fontsize -- Fontsize used for xlabels. Note this doesn't currently
+            change the actual fontsize, it is used to scale the bottom margin
+            so that the labels don't get cut off.
 
         Uses:
         self.onehot_df
+        self.clusters
+        self.tree
 
         Returns:
         A dictionary suitable to be give to plotly.
         """
 
-        df = self.onehot_df
-
-        if clustering_method is None:
-            clustering_method = self.clustering_method
-
-        if cutoff is None:
-            cutoff = self.cutoff
-
-        longest_label = max([len(l) for l in df.index])
-
-        dendro = ff.create_dendrogram(
-            df,
-            labels=df.index,
-            distfun=lambda x: pdist(x, metric=clustering_method),
-            color_threshold=cutoff,
-            hovertext=self.tree[:, 2].tolist(),
+        title = (
+            "Component clusters. method = {}, cutoff = {}, threshold = {}"
+        ).format(
+            self.clustering_method,
+            self.cutoff,
+            self.threshold,
         )
 
-        dendro.layout.update({
-            'width': width,
-            'height': height,
-            'title': 'BioDendro',
-            'xaxis': {'title': 'sample'},
-            'yaxis': {'title': 'distance'},
-            'hovermode': 'closest',
-            'margin': {'b': 12 * longest_label},
-        })
-
-        # Value 12 assumes font-size approx 12?
-        # Possibly could set based on font-size
+        dendro = dendrogram(
+            self,
+            width=width,
+            height=height,
+            title=title,
+            xlabel="Components",
+            ylabel="Distance",
+            margin_scalar=fontsize,
+        )
 
         if filename is not None:
-            plotly.offline.plot(dendro, filename=filename)
+            plotly.offline.plot(
+                dendro,
+                filename=filename,
+                auto_open=False,
+            )
 
         return dendro
