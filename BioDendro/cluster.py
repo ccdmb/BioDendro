@@ -8,7 +8,6 @@ from os.path import join as pjoin
 import numpy as np
 from scipy.cluster.hierarchy import linkage
 from scipy.cluster.hierarchy import fcluster
-from scipy.spatial.distance import pdist
 
 import matplotlib
 matplotlib.use("AGG")
@@ -16,7 +15,7 @@ matplotlib.use("AGG")
 from matplotlib import pyplot as plt  # noqa
 import plotly  # noqa
 
-from BioDendro.plot import create_dendro  # noqa
+from BioDendro.plot import dendrogram  # noqa
 
 
 class Tree(object):
@@ -26,24 +25,25 @@ class Tree(object):
     """
 
     def __init__(
-            self,
-            threshold=8e-4,
-            clustering_method="jaccard",
-            cutoff=0.6,
-            sample_col="sample",
-            mz_col="mz",
-            ):
+        self,
+        threshold=8e-4,
+        clustering_method="jaccard",
+        cutoff=0.6,
+        sample_col="sample",
+        mz_col="mz",
+    ):
         """ Constructs a tree object to bin and cluster mass spectra.
 
         Keyword arguments:
         df -- A pandas dataframe containing samples and mz values.
         threshold -- The threshold to use when dynamically binning mz's.
         clustering_method -- The distance metric used when hierarchically
-            clustering samples based on mz bin presence absence.
+        clustering samples based on mz bin presence absence.
         cutoff -- .
         sample_col -- The column name in the df to use as the samples.
         mz_col -- The column name in the df to use as the mz values.
         """
+
         self.threshold = threshold
         self.clustering_method = clustering_method
         self.cutoff = cutoff
@@ -56,12 +56,12 @@ class Tree(object):
         """ Bins the data and generates the tree.
 
         Keyword arguments:
-        df -- A pandas dataframe containing samples and mz values.
+            df -- A pandas dataframe containing samples and mz values.
 
         Modifies:
-        self.df -- Creates a copy of the input data.
-        Other elements modified indirectly.
-        """
+            self.df -- Creates a copy of the input data.
+            Other elements modified indirectly.
+            """
 
         self.df = df.copy()
         threshold = self.threshold
@@ -79,7 +79,7 @@ class Tree(object):
             np.around(np.mean(arr), 4),
             np.around(np.min(arr), 4),
             np.around(np.max(arr), 4)
-            )
+        )
 
     @staticmethod
     def _bin_starts(arr, threshold):
@@ -87,12 +87,13 @@ class Tree(object):
         Not intended for public use.
 
         Keyword arguments:
-        arr -- A pandas Series object, in sorted order.
-        threshold -- See __init__.
+            arr -- A pandas Series object, in sorted order.
+            threshold -- See __init__.
 
         returns:
         np.array
         """
+
         diffs = arr.diff()
         diffs[0] = threshold + 1
         bin_starts = np.where(diffs >= threshold)[0]
@@ -112,8 +113,8 @@ class Tree(object):
 
         Returns:
         np.array of strings, corresponding to names of bins.
-            Elements in the mz array with the same bin name, belong to the same
-            bin.
+        Elements in the mz array with the same bin name, belong to the same
+        bin.
         """
 
         # Create an empty array to store python strings
@@ -173,10 +174,11 @@ class Tree(object):
         Keyword arguments:
         df -- A pandas dataframe
         bins -- A list/array of ion bins to cluster the rows by. These will
-            form the column names. Must be the same length as df, but may
-            contain duplicates.
+        form the column names. Must be the same length as df, but may
+        contain duplicates.
         index_col -- The column to use from df.
         """
+
         df["present"] = True
         df["bins"] = bins
         return df.pivot_table(index=index_col, columns="bins",
@@ -211,16 +213,16 @@ class Tree(object):
         """ Hierarchically cluster the one hot encoded dataframe.
 
         Keyword arguments:
-        clustering_method -- The distance metric used to construct linkage
+            clustering_method -- The distance metric used to construct linkage
             with. May be either "jaccard" or "braycurtis". If none inherits
             from object.
 
         Uses:
-        self.onehot_df
+            self.onehot_df
 
         Modifies:
-        self.tree -- A scipy linkage array.
-        """
+            self.tree -- A scipy linkage array.
+            """
 
         if clustering_method is None:
             clustering_method = self.clustering_method
@@ -234,7 +236,7 @@ class Tree(object):
 
         Keyword arguments:
         cutoff -- A float, see __init__ for details.
-            If None inherits from object.
+        If None inherits from object.
 
         Uses:
         self.cutoff
@@ -242,7 +244,7 @@ class Tree(object):
 
         Modified:
         self.clusters -- An array corresponding to the clusters.
-            Will be the same length as the number of unique samples.
+        Will be the same length as the number of unique samples.
         """
 
         if cutoff is None:
@@ -259,11 +261,11 @@ class Tree(object):
 
         Keyword arguments:
         df -- A pandas dataframe with columns corresponding to mz bins, and
-            rows corresponding to samples. Values are boolean or ints [0, 1].
+        rows corresponding to samples. Values are boolean or ints [0, 1].
         height -- The plot height in inches.
         width_base -- The basic plot width in inches.
         width_multiplier -- For each bin in the category, add this width in
-            inches. Ensures x-axis labels are legible.
+        inches. Ensures x-axis labels are legible.
 
         Returns:
         fig -- A matplotlib figure object.
@@ -300,8 +302,9 @@ class Tree(object):
 
         Keyword arguments:
         path -- The directory to write the output to. This directory must
-            exist.
+        exist.
         """
+
         df = self.onehot_df
         clusters = self.clusters
 
@@ -311,77 +314,82 @@ class Tree(object):
             # Filter out columns that are all false for ease of visualisation.
             subtab = self._exclude_false_columns(subtab)
 
-            csv_filename = pjoin(path,
-                                 "cluster_{}_{}.csv".format(cluster, nmembers))
-            subtab.to_csv(csv_filename, sep="\t")
+            csv_filename = pjoin(
+                path,
+                "cluster_{}_{}.xlsx".format(cluster, nmembers)
+            )
+            subtab.to_excel(csv_filename)
 
             fig, ax = self._plot_bin_freqs(subtab)
-            fig.suptitle("Cluster {} with {} members".format(cluster,
-                                                             subtab.shape[0]))
-            plt_filename = pjoin(path,
-                                 "cluster_{}_{}.png".format(cluster, nmembers))
+            fig.suptitle("Cluster {} with {} members".format(
+                cluster,
+                subtab.shape[0])
+            )
+            plt_filename = pjoin(
+                path,
+                "cluster_{}_{}.png".format(cluster, nmembers)
+            )
             fig.savefig(plt_filename)
 
             # Prevents plotting these plots in interactive mode.
             plt.close()
 
-        filename = pjoin(path, "clusters.csv")
+        filename = pjoin(path, "clusters.xlsx")
         df["cluster"] = clusters
         df = df[["cluster"] + [c for c in df.columns if c != "cluster"]]
-        df.to_csv(filename, sep="\t")
+        df.to_excel(filename)
         return
 
-    def iplot(
-            self,
-            filename=None,
-            cutoff=None,
-            clustering_method=None,
-            width=900,
-            height=400
-            ):
+    def plot(
+        self,
+        filename=None,
+        width=900,
+        height=800,
+        fontsize=12,
+    ):
         """ Plots an interactive tree from these data using plotly.
 
         Keyword arguments:
         filename -- The path to save the plotly html file. If None, don't write
-            the plot.
-        cutoff -- See __init__. If None will inherit value from object.
-        clustering_method -- As for cutoff.
+        the plot.
         width -- Width of the plot in pixels.
         height -- Height of the plot in pixels.
+        fontsize -- Fontsize used for xlabels. Note this doesn't currently
+            change the actual fontsize, it is used to scale the bottom margin
+            so that the labels don't get cut off.
 
         Uses:
         self.onehot_df
+        self.clusters
+        self.tree
 
         Returns:
         A dictionary suitable to be give to plotly.
         """
 
-        df = self.onehot_df
+        title = (
+            "Component clusters. method = {}, cutoff = {}, threshold = {}"
+        ).format(
+            self.clustering_method,
+            self.cutoff,
+            self.threshold,
+        )
 
-        if clustering_method is None:
-            clustering_method = self.clustering_method
+        dendro = dendrogram(
+            self,
+            width=width,
+            height=height,
+            title=title,
+            xlabel="Components",
+            ylabel="Distance",
+            margin_scalar=fontsize,
+        )
 
-        if cutoff is None:
-            cutoff = self.cutoff
-
-        dendro = create_dendro(
-            df,
-            labels=df.index,
-            distfun=lambda x: pdist(x, metric=clustering_method),
-            color_threshold=cutoff
-            )
-
-        dendro['layout'].update({
-            'width': width,
-            'height': height,
-            'title': 'BioDendro',
-            'xaxis': {'title': 'sample'},
-            'yaxis': {'title': 'distance'},
-            'hovermode': 'closest'
-            })
-
-        dendro['data'].update({'hoverinfo': 'all'})
         if filename is not None:
-            plotly.offline.plot(dendro, filename=filename)
+            plotly.offline.plot(
+                dendro,
+                filename=filename,
+                auto_open=False,
+            )
 
         return dendro
