@@ -22,6 +22,20 @@ class MGF(object):
         self.mzs = [r.pepmass.mz for r in records]
         return
 
+    def __str__(self):
+        cls = self.__class__.__name__
+        template = "{}(records=[\n{}\n{}])"
+        n_to_display = 5
+        trailing = "...\n" if n_to_display < len(self.records) else ""
+        return template.format(
+            cls,
+            ",\n".join(map(str, self.records[:n_to_display])),
+            trailing
+        )
+
+    def __repr__(self):
+        return str(self)
+
     @classmethod
     def parse(cls, handle, scaling=False, filtering=False, eps=0.0):
         records = MGFRecord.parse(
@@ -188,18 +202,22 @@ class MGFRecord(object):
         if max_inten > 0.0:
             # Divide by max if values aren't none.
             # Keep none values around though.
-            scaled_intensities = map(
+            scaled_intensities = list(map(
                 lambda i: i / max_inten if i is not None else None,
                 intensities
-            )
+            ))
         else:
             scaled_intensities = intensities
+
+        # If we're scaling, we can discard regular intensities.
+        if scaling:
+            intensities = scaled_intensities
 
         # Precompute filter mask.
         # Still get cost if not filtering, but makes code simpler.
         # When this is true, the value will be retained
         filter_mask = map(
-            lambda: i >= eps if i is not None else True,
+            lambda i: i >= eps if i is not None else True,
             scaled_intensities
         )
 

@@ -27,11 +27,11 @@ def pipeline(
     results_dir=None,
     out_html="simple_dendrogram.html",
     width=900,
-    height=400,
+    height=800,
     quiet=False,
     scaling=False,
     filtering=False,
-    eps=0.0,
+    eps=0.6,
     mz_tol=0.002,
     retention_tol=5,
     **kwargs
@@ -237,7 +237,7 @@ def main():
         dest="height_px",
         help="The height of the dendrogram plot in pixels.",
         type=int,
-        default=400
+        default=800
     )
 
     parser.add_argument(
