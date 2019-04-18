@@ -79,7 +79,7 @@ setup(
     # https://packaging.python.org/en/latest/requirements.html
 
     # Sorry about the hard dependency for scikit-learn.
-    # The way that the PCA model is stored is not necessarily stable across 
+    # The way that the PCA model is stored is not necessarily stable across
     # versions of scikit-learn, so I have to keep it fixed.
     install_requires=[
         'wheel', # Required for older plotly install
@@ -90,7 +90,7 @@ setup(
         'scikit-learn',
         'xlrd',
         'xlsxwriter',
-        'plotly==2.7.0',
+        'plotly',
         'pillow', # Provides PIL
         ],
 
