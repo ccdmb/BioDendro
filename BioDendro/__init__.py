@@ -36,7 +36,26 @@ def pipeline(
     retention_tol=5,
     **kwargs
 ):
-    """ Runs the default BioDendro pipeline. """
+    """ Runs the default BioDendro pipeline.
+
+    Usage:
+
+        # Minimum usage with default values.
+        >>> pipeline("my_mgf_file.mgf", "my_components.txt")
+        ...
+        ...
+        # To use scaling and filtering
+        >>> pipeline("my_m"
+
+    Keyword arguments:
+        mfg_path -- A string specifying the path to the MGF file (Required).
+        clustering_method -- The distance metric to use for clustering.
+            Either "jaccard" or "braycurtis" (Default "jaccard").
+        scaling -- (Default: False)
+        eps -- The intensity for filtering (must be between 0 and 1).
+            Zero would be no filter.
+
+    """
 
     if quiet:
         printer = lambda *x: None

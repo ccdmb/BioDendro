@@ -40,7 +40,7 @@ def dendrogram(
 
     (dd_traces, xvals, yvals, ordered_labels, leaves) = _get_traces(
         hierarchy=tree.tree,
-        labels=tree.onehot_df.index.to_list(),
+        labels=list(tree.onehot_df.index),
         threshold=tree.cutoff,
         orientation=orientation,
         sign=sign,
