@@ -346,6 +346,7 @@ class Tree(object):
         width=900,
         height=800,
         fontsize=12,
+        auto_open=True,
     ):
         """ Plots an interactive tree from these data using plotly.
 
@@ -389,7 +390,6 @@ class Tree(object):
             plotly.offline.plot(
                 dendro,
                 filename=filename,
-                auto_open=False,
             )
 
         return dendro
