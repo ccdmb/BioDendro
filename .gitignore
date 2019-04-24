@@ -5,3 +5,8 @@ env
 
 BioDendro.egg-info/
 .pytest_cache
+
+*.png
+*.xlsx
+*params.txt
+*.html
