@@ -253,6 +253,7 @@ class Tree(object):
             self.cutoff = cutoff
 
         self.clusters = fcluster(self.tree, cutoff, criterion='distance')
+        self.cluster_map = dict(zip(list(self.onehot_df.index), self.clusters))
         return
 
     @staticmethod
@@ -305,7 +306,7 @@ class Tree(object):
         exist.
         """
 
-        df = self.onehot_df
+        df = self.onehot_df.copy()
         clusters = self.clusters
 
         for cluster, subtab in df.groupby(clusters):
@@ -339,6 +340,37 @@ class Tree(object):
         df = df[["cluster"] + [c for c in df.columns if c != "cluster"]]
         df.to_excel(filename)
         return
+
+    def cluster_table(self, cluster=None, sample=None):
+        """ Return a table of presence-absence metabolites for a given cluster.
+        """
+
+        if cluster is None and sample is None:
+            raise ValueError("Either cluster or sample must be set.")
+        elif cluster is not None and sample is not None:
+            raise ValueError("Please provide a sample or cluster, not both.")
+        elif sample is not None:
+            try:
+                cluster = self.cluster_map[sample]
+            except KeyError:
+                raise KeyError("The sample you provided isn't in the dataset.")
+
+        subtab = self.onehot_df.loc[self.clusters == cluster]
+        return self._exclude_false_columns(subtab)
+
+    def cluster_hist(
+        self,
+        cluster=None,
+        sample=None,
+        height=5,
+        width_base=1,
+        width_multiplier=0.15
+    ):
+        """ Plot a histogram of metabolite frequencies in the data. """
+
+        subtab = self.cluster_table(cluster, sample)
+        return self._plot_bin_freqs(subtab, height,
+                                    width_base, width_multiplier)
 
     def plot(
         self,
