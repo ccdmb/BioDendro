@@ -27,7 +27,7 @@ def pipeline(
     results_dir=None,
     out_html="simple_dendrogram.html",
     width=900,
-    height=800,
+    height=1200,
     quiet=False,
     scaling=False,
     filtering=False,
@@ -36,13 +36,17 @@ def pipeline(
     retention_tol=5,
     **kwargs
 ):
-    """ Runs the default BioDendro pipeline.
+    """ Runs the BioDendro pipeline.
+
+    BioDentro takes an MGF and a list of components, finds MSMS spectra
+    matching your components, and writes out useful summaries of clusters
+    based on shared ion spectra
 
     Minimal example:
     >>> tree = BioDendro.pipeline("MSMS.mgf", "component_list.txt")
 
     Required parameters:
-    mgf_path           Name of .mgf file 
+    mgf_path           Name of .mgf file
     components_path    Name of .txt file
 
     Optional parameters:
@@ -54,15 +58,17 @@ def pipeline(
                        False
                        True or False
 
-    cutoff             the y-axis value to cut the dendogram and form clusters
+    cutoff             the y-axis value/distance to cut the dendogram and
+                         form clusters
                        0.6
                        From 0 to 1
 
-    bin_threshold      maximum difference between two consecutive masses before a new mass bin is created
+    bin_threshold      maximum difference between two consecutive masses
+                         before a new mass bin is created
                        0.0008
                        Typical range 0.00001-1 Dalton
 
-    clustering method  Distance metric used for clustering
+    cluster_method     Distance metric used for clustering
                        "jaccard"
                        "jaccard" or "braycurtis"
 
@@ -70,41 +76,48 @@ def pipeline(
                        900
                        Recommended maximum 1200
 
-    height             height of dendogram output in pixels. Branch labels are included in this dimension
-                       800
+    height             height of dendogram output in pixels. Branch labels are
+                         included in this dimension
+                       1200
                        Recommended maximum 1200
+
+    scaling            Highest m/z within an MSMS spectra is normalised to 1
+                         and all other masses are scaled to it
+                       False
+                       True or False
+
+    filtering          Ions within an MSMS spectra are removed based on scaled
+                         intensity set by `eps` parameter.
+                       False
+                       True or False
+
+    eps                Scaled intensity value for which ions below are removed
+                       0.6
+                       0.0 - 1.0
+
+    mz_tol             m/z tolerance window to align MSMS spectra to component
+                         list
+                       0.002
+                       unlimited
+
+    retention_tol      retention time tolerance window in seconds to align
+                         MSMS spectra to component list
+                       5
+                       unlimited
+
+    results_dir        directory to write per-cluster plots and tables to.
+                       None (Will use `results_<datetime>` where
+                         <datetime> is the current date and time in
+                         YYYYMMDDHHmmSS format).
+                       can be user defined
+
+    out_html           file to write interactive dendogram plot to.
+                       None (`results_dir\\simple_dendrogram.html`)
+                       can be user defined
 
     quiet              suppress pipeline messages
                        False
                        True or False
-
-    scaling            Highest m/z within an MSMS spectra is normalised to 1 and all other masses are scaled to it
-                       False
-                       True or False
-
-    filtering          Ions within an MSMS spectra are removed based on scaled intensity
-                       False
-                       True or False
-
-    eps                Scaled value for which ions below are removed
-                       0.6
-                       0.0 - 1.0
-
-    mz_tol             m/z tolerance window to align MSMS spectra to component list
-                       0.002
-                       unlimited
-
-    retention_tol      retention time tolerance window to align MSMS spectra to component list
-                       5
-                       unlimited
- 
-    results_dir        Directory to write per-cluster plots and table in results_time stamp format
-                       None (will write to current directory)
-                       can be user defined
- 
-    out_html           Directory to write interactive dendogram plot too
-                       None (will write to results folder)
-                       can be user defined
     """
 
     if quiet:
@@ -227,7 +240,11 @@ def pipeline(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Run the BioDendro pipeline."
+        description=(
+            "BioDentro takes an MGF and a list of components, finds MSMS "
+            "spectra matching your components, and writes out useful "
+            "summaries of clusters based on shared ion spectra."
+        )
     )
 
     parser.add_argument(
@@ -242,21 +259,24 @@ def main():
 
     parser.add_argument(
         "-n", "--neutral",
-        help="Apply neutral loss.",
+        help="Convert MSMS spectra to neutral loss spectra.",
         action="store_true",
         default=False
     )
 
     parser.add_argument(
         "-c", "--cutoff",
-        help="Distance threshold for selecting clusters from tree.",
+        help=("The y-axis value to cut the dendogram and form clusters. "
+              "Must be between 0 and 1 (Default 0.6)."),
         type=float,
         default=0.6
     )
 
     parser.add_argument(
         "-b", "--bin-threshold",
-        help="Threshold for binning m/z values prior to clustering.",
+        help=("Maximum difference between two consecutive masses before a "
+              "new mass bin is created. Typical range 0.00001-1 Dalton "
+              "(Default 0.0008)"),
         dest="bin_threshold",
         type=float,
         default=8e-4
@@ -264,7 +284,7 @@ def main():
 
     parser.add_argument(
         "-d", "--cluster-method",
-        help="The distance metric used during tree construction.",
+        help="The distance metric used for clustering (Default jaccard).",
         dest="clustering_method",
         default="jaccard",
         choices=["jaccard", "braycurtis"],
@@ -280,23 +300,24 @@ def main():
         "-o", "--output",
         dest="out_html",
         default="simple_dendrogram.html",
-        help="Path to write interactive html plot to."
+        help=("File to write interactive dendrogram plot to. "
+              "By default will write to `--results-dir` as "
+              "`simple_dendrogram.html`.")
     )
 
     parser.add_argument(
         "-r", "--results-dir",
         dest="results_dir",
         default=None,
-        help=("Directory to write per-cluster plots and table to."
-              "Default is to use 'results_20180606112200' where the number is"
-              "the current datetime.\n"
-              "WARNING: will overwrite contents of existing directories.")
+        help=("Directory to write per-cluster plots and tables to. "
+              "By default will write to `results_<datetime>` where <datetime> "
+              "is the current date and time in YYYYMMDDHHmmSS format.")
     )
 
     parser.add_argument(
         "-x", "--width",
         dest="width_px",
-        help="The width of the dendrogram plot in pixels.",
+        help="Width of the dendrogram output in pixels (Default 900).",
         type=int,
         default=900
     )
@@ -304,9 +325,50 @@ def main():
     parser.add_argument(
         "-y", "--height",
         dest="height_px",
-        help="The height of the dendrogram plot in pixels.",
+        help=("Height of the dendrogram plot in pixels. Branch labels are "
+              "included in this dimension (Default 1200)."),
         type=int,
-        default=800
+        default=1200
+    )
+
+    parser.add_argument(
+        "-s", "--scaling",
+        help=("Highest m/z within an MSMS spectra is normalised to 1 "
+              "and all other masses are scaled to it."),
+        action="store_true",
+        default=False
+    )
+
+    parser.add_argument(
+        "-f", "--filtering",
+        help=("Ions within an MSMS spectra are removed based on scaled "
+              "intensity with threshold set by --eps."),
+        action="store_true",
+        default=False
+    )
+
+    parser.add_argument(
+        "-e", "--eps",
+        help=("Scaled intensity value between 0 and 1 for which ions below "
+              "are removed (Default 0.6)."),
+        type=float,
+        default=0.6
+    )
+
+    parser.add_argument(
+        "-mz_tol", "--mz_tol",
+        help=("m/z tolerance window to align MSMS spectra to component list "
+              "(Default 0.002)"),
+        type=float,
+        default=0.002
+    )
+
+    parser.add_argument(
+        "-retention_tol", "--retention_tol",
+        help=("Retention time tolerance window in seconds to align MSMS "
+              "spectra to component list (Default 5)."),
+        type=float,
+        default=5
     )
 
     parser.add_argument(
@@ -314,42 +376,6 @@ def main():
         help="Suppress status notifications written to stdout.",
         action="store_true",
         default=False
-    )
-
-    parser.add_argument(
-        "-s", "--scaling",
-        help="Flag to scale the m/z intensities values",
-        action="store_true",
-        default=False
-    )
-
-    parser.add_argument(
-        "-f", "--filtering",
-        help="Flag to filter the m/z intensities values",
-        action="store_true",
-        default=False
-    )
-
-    parser.add_argument(
-        "-e", "--eps",
-        help="Intensity threshold for filtering, set value between 0.0-1.0",
-        type=float,
-        default=0.6
-    )
-
-    parser.add_argument(
-        "-mz_tol", "--mz_tol",
-        help="Mass tolerance to remove redundancy, default is 0.002",
-        type=float,
-        default=0.002
-    )
-
-    parser.add_argument(
-        "-retention_tol", "--retention_tol",
-        help=("Retention time tolerance to remove redundancy, "
-              "default is 5 secs"),
-        type=float,
-        default=5
     )
 
     args = parser.parse_args()

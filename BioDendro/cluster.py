@@ -29,7 +29,7 @@ class Tree(object):
         threshold=8e-4,
         clustering_method="jaccard",
         cutoff=0.6,
-        sample_col="sample",
+        sample_col="component",
         mz_col="mz",
     ):
         """ Constructs a tree object to bin and cluster mass spectra.
@@ -193,6 +193,7 @@ class Tree(object):
         Uses:
         self.df
         self.mz_col
+        self.sample_col
 
         Modifies:
         self.onehot_df -- A one-hot encoded dataframe of samples vs bins.
@@ -206,7 +207,7 @@ class Tree(object):
 
         bin_starts = self._bin_starts(df[colname], threshold)
         bins = self._bin_names(df[colname], bin_starts)
-        self.onehot_df = self._pivot(df, bins, "sample")
+        self.onehot_df = self._pivot(df, bins, self.sample_col)
         return
 
     def _hclust(self, clustering_method=None):
