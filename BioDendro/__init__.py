@@ -38,23 +38,73 @@ def pipeline(
 ):
     """ Runs the default BioDendro pipeline.
 
-    Usage:
+    Minimal example:
+    >>> tree = BioDendro.pipeline("MSMS.mgf", "component_list.txt")
 
-        # Minimum usage with default values.
-        >>> pipeline("my_mgf_file.mgf", "my_components.txt")
-        ...
-        ...
-        # To use scaling and filtering
-        >>> pipeline("my_m"
+    Required parameters:
+    mgf_path           Name of .mgf file 
+    components_path    Name of .txt file
 
-    Keyword arguments:
-        mfg_path -- A string specifying the path to the MGF file (Required).
-        clustering_method -- The distance metric to use for clustering.
-            Either "jaccard" or "braycurtis" (Default "jaccard").
-        scaling -- (Default: False)
-        eps -- The intensity for filtering (must be between 0 and 1).
-            Zero would be no filter.
+    Optional parameters:
+    parameter          description
+                       default value
+                       user options
 
+    neutral            convert MSMS spectra to neutral loss spectra
+                       False
+                       True or False
+
+    cutoff             the y-axis value to cut the dendogram and form clusters
+                       0.6
+                       From 0 to 1
+
+    bin_threshold      maximum difference between two consecutive masses before a new mass bin is created
+                       0.0008
+                       Typical range 0.00001-1 Dalton
+
+    clustering method  Distance metric used for clustering
+                       "jaccard"
+                       "jaccard" or "braycurtis"
+
+    width              width of dendogram output in pixels
+                       900
+                       Recommended maximum 1200
+
+    height             height of dendogram output in pixels. Branch labels are included in this dimension
+                       800
+                       Recommended maximum 1200
+
+    quiet              suppress pipeline messages
+                       False
+                       True or False
+
+    scaling            Highest m/z within an MSMS spectra is normalised to 1 and all other masses are scaled to it
+                       False
+                       True or False
+
+    filtering          Ions within an MSMS spectra are removed based on scaled intensity
+                       False
+                       True or False
+
+    eps                Scaled value for which ions below are removed
+                       0.6
+                       0.0 - 1.0
+
+    mz_tol             m/z tolerance window to align MSMS spectra to component list
+                       0.002
+                       unlimited
+
+    retention_tol      retention time tolerance window to align MSMS spectra to component list
+                       5
+                       unlimited
+ 
+    results_dir        Directory to write per-cluster plots and table in results_time stamp format
+                       None (will write to current directory)
+                       can be user defined
+ 
+    out_html           Directory to write interactive dendogram plot too
+                       None (will write to results folder)
+                       can be user defined
     """
 
     if quiet:
