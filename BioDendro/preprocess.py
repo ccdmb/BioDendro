@@ -199,26 +199,23 @@ class MGFRecord(object):
         if all_none:
             return ions
 
-        if max_inten > 0.0:
-            # Divide by max if values aren't none.
-            # Keep none values around though.
-            scaled_intensities = list(map(
-                lambda i: i / max_inten if i is not None else None,
-                intensities
-            ))
-        else:
-            scaled_intensities = intensities
-
-        # If we're scaling, we can discard regular intensities.
         if scaling:
-            intensities = scaled_intensities
+            if max_inten > 0.0:
+                # Divide by max if values aren't none.
+                # Keep none values around though.
+                intensities = list(map(
+                    lambda i: i / max_inten if i is not None else None,
+                    intensities
+                ))
+            else:
+                intensities = intensities
 
         # Precompute filter mask.
         # Still get cost if not filtering, but makes code simpler.
         # When this is true, the value will be retained
         filter_mask = map(
             lambda i: i >= eps if i is not None else True,
-            scaled_intensities
+            intensities
         )
 
         ret_ions = [
