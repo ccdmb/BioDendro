@@ -24,7 +24,7 @@ git clone git@github.com:CurtinIC/BioDendro.git && cd BioDendro
 pip install --user .
 ```
 
-To install as root, you can omit `--user`. I.E.
+To install as root, you can omit `--user`.
 
 ```bash
 sudo pip3 install git+https://github.com/CurtinIC/BioDendro.git
@@ -70,3 +70,46 @@ The example jupyter notebooks contain more detailed explanations of different pa
 
 
 ![Scheme](cluster-d10.png "Clustering")
+
+
+## Command line API
+
+The pipeline can also be run from a bash or bash-like terminal.
+This is useful if you're not planning on tweaking the parameters much and just want to run the darn thing.
+
+For these examples, we're using the ipython magic command `%%bash` to run the commands in bash.
+You can omit the %%bash bit if you're running straight in the terminal.
+
+To get a list of all options available use the `--help` (or `-h`) flag.
+
+```bash
+%%bash
+BioDendro --help
+```
+The minimum options to run the pipeline are the MGF file and a components list.
+
+Using the example data in the BioDendro repo we could run...
+
+```bash
+%%bash
+
+BioDendro MSMS.mgf component_list.txt
+```
+
+As before, the results will be stored in a directory with the current date and the current time added to the end of it.
+
+You can change the parameters to use by supplying additional flags, however, this will run the whole pipeline again, so it you just need to adjust the cutoff or decide to use braycurtis instead of jaccard distances, you might be better off using the python API.
+
+```bash
+%%bash
+
+BioDendro --scaling --cluster-method braycurtis --cutoff 0.5 MSMS.mgf component_list.txt
+```
+
+would be equivalent to running the following in python
+
+```python
+tree = BioDendro.pipeline("MSMS.mgf", "component_list.txt", clustering_method="braycurtis", scaling=True, cutoff=0.5)
+```
+
+

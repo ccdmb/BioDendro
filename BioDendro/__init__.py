@@ -53,24 +53,48 @@ def pipeline(
     parameter          description
                        default value
                        user options
+                       
+    mz_tol             m/z tolerance window to align MSMS spectra to component
+                          list
+                       0.002
+                       unlimited, dependent on instrument resolution
 
+    retention_tol      retention time tolerance window in seconds to align
+                          MSMS spectra to component list
+                       5
+                       unlimited, recommended at half peak width
+                       
+    bin_threshold      maximum difference between two consecutive masses
+                         before a new mass bin is created
+                       0.0008
+                       Typical range 0.00001-1 Dalton
+                           
+    scaling            Highest m/z within an MSMS spectra is normalised to 1
+                         and all other masses are scaled to it
+                       False
+                       True or False
+
+    filtering          Ions within an MSMS spectra are removed based on 
+                        intensity set by `eps` parameter.
+                       False
+                       True or False
+
+    eps                Scaled intensity value for which ions below are removed
+                       None
+                       0.0 - 1.0 with scaling, otherwise data dependent without scaling                   
+                       
     neutral            convert MSMS spectra to neutral loss spectra
                        False
                        True or False
+                       
+    cluster_method     Distance metric used for clustering
+                       "jaccard"
+                       "jaccard" or "braycurtis"                   
 
     cutoff             the y-axis value/distance to cut the dendogram and
                          form clusters
                        0.6
                        From 0 to 1
-
-    bin_threshold      maximum difference between two consecutive masses
-                         before a new mass bin is created
-                       0.0008
-                       Typical range 0.00001-1 Dalton
-
-    cluster_method     Distance metric used for clustering
-                       "jaccard"
-                       "jaccard" or "braycurtis"
 
     width              width of dendogram output in pixels
                        900
@@ -80,30 +104,6 @@ def pipeline(
                          included in this dimension
                        1200
                        Recommended maximum 1200
-
-    scaling            Highest m/z within an MSMS spectra is normalised to 1
-                         and all other masses are scaled to it
-                       False
-                       True or False
-
-    filtering          Ions within an MSMS spectra are removed based on scaled
-                         intensity set by `eps` parameter.
-                       False
-                       True or False
-
-    eps                Scaled intensity value for which ions below are removed
-                       0.6
-                       0.0 - 1.0
-
-    mz_tol             m/z tolerance window to align MSMS spectra to component
-                         list
-                       0.002
-                       unlimited
-
-    retention_tol      retention time tolerance window in seconds to align
-                         MSMS spectra to component list
-                       5
-                       unlimited
 
     results_dir        directory to write per-cluster plots and tables to.
                        None (Will use `results_<datetime>` where
