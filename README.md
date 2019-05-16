@@ -3,6 +3,8 @@
 **A package to cluster metabolomics data, and plot dendrograms**
 
 [![Build Status](https://travis-ci.org/ccdmb/BioDendro.svg?branch=master)](https://travis-ci.org/ccdmb/BioDendro)
+[![PyPI version](https://badge.fury.io/py/BioDendro.svg)](https://badge.fury.io/py/BioDendro)
+
 
 ## Background
 
@@ -12,17 +14,12 @@
 Converts MGF format and component list into non-redundant list.
 Component-analyte list is converted into a data matrix and analytes are dynamically binned and clustered.
 
-## Install on Linux or Mac from bash
+## Install on Linux or Mac from the command line
 
 Installing is easiest with pip.
 Assuming you have python3 installed you can run the following to install.
 
 ```bash
-python3 -m pip install --user biodendro
-
-# or
-
-git clone git@github.com:CurtinIC/BioDendro.git && cd BioDendro
 python3 -m pip install --user biodendro
 ```
 
