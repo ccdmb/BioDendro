@@ -2,6 +2,8 @@
 
 **A package to cluster metabolomics data, and plot dendrograms**
 
+[![Build Status](https://travis-ci.org/ccdmb/BioDendro.svg?branch=master)](https://travis-ci.org/ccdmb/BioDendro)
+
 ## Background
 
 - Project owner: Catherine Rawlinson (PhD candidate)
