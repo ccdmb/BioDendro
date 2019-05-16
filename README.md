@@ -84,8 +84,7 @@ The example jupyter notebooks contain more detailed explanations of different pa
 
 [longer-example.ipynb](longer-example.ipynb) contains more detailed information about how the pipeline works, and how you can modify parameters.
 
-
-![Scheme](cluster-d10.png "Clustering")
+Download the template notebook [here](https://github.com/ccdmb/BioDendro/raw/master/quick-start.ipynb) (Right-click, save-as).
 
 
 ## Command line API
