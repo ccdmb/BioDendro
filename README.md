@@ -55,27 +55,10 @@ To run the Jupyter notebooks, you'll also need to install jupyter.
 python3 -m pip install --user jupyter
 ```
 
-## Quick Start Example - command line
+## Quick Start - Python library
 
-The quickest way to run is using the command-line interface.
-
-A list of options can be obtained with the `--help` flag.
-
-```bash
-BioDendro --help
-```
-
-To run the basic pipeline using the example MGF and components file do:
-
-```bash
-BioDendro --results-dir my_results_dir MSMS.mgf component_list.txt
-```
-
-
-## Quick Start Example - Python library
-
-The pipeline is also available as a python function/library.
-The command above would be equivalent to the following in python.
+The pipeline available as a python package.
+To run the full pipeline in python.
 
 ```python
 import BioDendro
@@ -90,40 +73,32 @@ The example jupyter notebooks contain more detailed explanations of different pa
 
 [longer-example.ipynb](longer-example.ipynb) contains more detailed information about how the pipeline works, and how you can modify parameters.
 
-Download the template notebook [here](https://github.com/ccdmb/BioDendro/raw/master/quick-start.ipynb) (Right-click, save-as).
+A template notebook [available here](https://github.com/ccdmb/BioDendro/raw/master/quick-start.ipynb) (Right-click, save-as) is provided to help beginners get started.
 
 
-## Command line API
+## Quick Start - command line
 
-The pipeline can also be run from a bash or bash-like terminal.
+The pipeline is also available as a command line script.
 This is useful if you're not planning on tweaking the parameters much and just want to run the darn thing.
 
-For these examples, we're using the ipython magic command `%%bash` to run the commands in bash.
-You can omit the %%bash bit if you're running straight in the terminal.
-
-To get a list of all options available use the `--help` (or `-h`) flag.
+A list of options can be obtained with the `--help` (or `-h`) flag.
 
 ```bash
-%%bash
 BioDendro --help
 ```
-The minimum options to run the pipeline are the MGF file and a components list.
 
-Using the example data in the BioDendro repo we could run...
+The minimum options to run the pipeline are the MGF file and a components list.
+To run the basic pipeline with the same parameters as in the python quickstart:
 
 ```bash
-%%bash
-
-BioDendro MSMS.mgf component_list.txt
+BioDendro --results-dir my_results_dir MSMS.mgf component_list.txt
 ```
 
-As before, the results will be stored in a directory with the current date and the current time added to the end of it.
+If the `--results-dir` parameter is ommitted, the results will be stored in a directory with the current date and the current time added to the end of it.
 
 You can change the parameters to use by supplying additional flags, however, this will run the whole pipeline again, so it you just need to adjust the cutoff or decide to use braycurtis instead of jaccard distances, you might be better off using the python API.
 
 ```bash
-%%bash
-
 BioDendro --scaling --cluster-method braycurtis --cutoff 0.5 MSMS.mgf component_list.txt
 ```
 
