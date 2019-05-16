@@ -25,17 +25,18 @@ python3 -m pip install --user biodendro
 
 The `--user` flag tells pip to install to a user directory rather than a system directory.
 Generally this will be under `~/.local` for Mac and Linux.
-Make sure that `~/.local/bin` is added to your `$PATH` if this is the case [see here](https://stackoverflow.com/questions/14637979/how-to-permanently-set-path-on-linux-unix).
+Make sure that `~/.local/bin` is added to your `$PATH` if this is the case ([see here](https://stackoverflow.com/questions/14637979/how-to-permanently-set-path-on-linux-unix) for tips on modifying your path).
 
-For more advanced users, we recommend using a [virtual environment](https://virtualenv.pypa.io/en/stable/) or [conda environment](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html).
+For more advanced users, we recommend using a [virtual environment](https://virtualenv.pypa.io/en/stable/) or [conda environment](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html) to avoid conflicting package versions.
 
-To install as root, you can omit `--user`, though this is generally discouraged.
+To install as root, you can omit `--user`.
+Note however that this is generally discouraged.
 
 ```bash
 sudo python3 -m pip install biodendro
 ```
 
-To install the latest and greatest version, you can use [git](https://git-scm.com/), to install directly from the repository.
+To install the latest and greatest version, you can use [git](https://git-scm.com/) to install directly from the repository.
 
 ```bash
 python3 -m pip install --user git+https://github.com/CurtinIC/BioDendro.git
@@ -48,6 +49,11 @@ python3 -m pip install --user .
 
 Both the `BioDendro` script and the python package will now be available to use (assuming Python is configured correctly).
 
+To run the Jupyter notebooks, you'll also need to install jupyter.
+
+```bash
+python3 -m pip install --user jupyter
+```
 
 ## Quick Start Example - command line
 
