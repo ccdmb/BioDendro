@@ -10,28 +10,44 @@
 Converts MGF format and component list into non-redundant list.
 Component-analyte list is converted into a data matrix and analytes are dynamically binned and clustered.
 
-## Install
+## Install on Linux or Mac from bash
 
 Installing is easiest with pip.
 Assuming you have python3 installed you can run the following to install.
 
 ```bash
-pip3 install --user git+https://github.com/CurtinIC/BioDendro.git
+python3 -m pip install --user biodendro
 
 # or
 
 git clone git@github.com:CurtinIC/BioDendro.git && cd BioDendro
-pip install --user .
+python3 -m pip install --user biodendro
 ```
 
-To install as root, you can omit `--user`.
+The `--user` flag tells pip to install to a user directory rather than a system directory.
+Generally this will be under `~/.local` for Mac and Linux.
+Make sure that `~/.local/bin` is added to your `$PATH` if this is the case [see here](https://stackoverflow.com/questions/14637979/how-to-permanently-set-path-on-linux-unix).
+
+For more advanced users, we recommend using a [virtual environment](https://virtualenv.pypa.io/en/stable/) or [conda environment](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html).
+
+To install as root, you can omit `--user`, though this is generally discouraged.
 
 ```bash
-sudo pip3 install git+https://github.com/CurtinIC/BioDendro.git
+sudo python3 -m pip install biodendro
 ```
 
-Both the `BioDendro` script and the python package will now be installed on your path
-(assuming Python is configured correctly).
+To install the latest and greatest version, you can use [git](https://git-scm.com/), to install directly from the repository.
+
+```bash
+python3 -m pip install --user git+https://github.com/CurtinIC/BioDendro.git
+
+# or
+
+git clone git@github.com:CurtinIC/BioDendro.git && cd BioDendro
+python3 -m pip install --user .
+```
+
+Both the `BioDendro` script and the python package will now be available to use (assuming Python is configured correctly).
 
 
 ## Quick Start Example - command line
@@ -49,6 +65,7 @@ To run the basic pipeline using the example MGF and components file do:
 ```bash
 BioDendro --results-dir my_results_dir MSMS.mgf component_list.txt
 ```
+
 
 ## Quick Start Example - Python library
 
@@ -111,5 +128,3 @@ would be equivalent to running the following in python
 ```python
 tree = BioDendro.pipeline("MSMS.mgf", "component_list.txt", clustering_method="braycurtis", scaling=True, cutoff=0.5)
 ```
-
-

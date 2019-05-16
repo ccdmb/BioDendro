@@ -2,6 +2,7 @@ env
 **/__pycache__
 .eggs
 .ipynb_checkpoints
+.tox
 
 BioDendro.egg-info/
 .pytest_cache

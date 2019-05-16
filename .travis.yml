@@ -1,0 +1,17 @@
+dist: xenial   # required for Python >= 3.7
+language: python
+python:
+  - "3.5"
+  - "3.6"
+  - "3.7"
+
+install:
+  - pip install pandas${PANDAS_VERSION} plotly${PLOTLY_VERSION}
+  - pip install .[test]
+
+
+env:
+  - PANDAS_VERSION=">=0.24.0"
+  - PANDAS_VERSION=">=0.23.0,<0.24.0"
+  - PLOTLY_VERSION=">=3.9.0"
+  - PLOTLY_VERSION=">=3.8.0,<3.9.0"
