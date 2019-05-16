@@ -9,6 +9,8 @@ install:
   - pip install pandas${PANDAS_VERSION} plotly${PLOTLY_VERSION}
   - pip install .[test]
 
+script:
+  - pytest
 
 env:
   - PANDAS_VERSION=">=0.24.0"
