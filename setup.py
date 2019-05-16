@@ -26,6 +26,7 @@ setup(
 
     description='a package to cluster metabolomics data and plot dendrograms',
     long_description=long_description,
+    long_description_content_type="text/markdown",
 
     # The project's main homepage.
     url='https://github.com/ccdmb/BioDendro',
@@ -54,14 +55,13 @@ setup(
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         ],
 
     # What does your project relate to?
-    keywords='metabolomics bioinformatics plotting',
+    keywords='metabolomics bioinformatics plotting clustering',
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
