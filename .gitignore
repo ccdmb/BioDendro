@@ -11,3 +11,5 @@ BioDendro.egg-info/
 *.xlsx
 *params.txt
 *.html
+
+!images/banner.png

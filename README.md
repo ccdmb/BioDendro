@@ -5,19 +5,64 @@
 [![Build Status](https://travis-ci.org/ccdmb/BioDendro.svg?branch=master)](https://travis-ci.org/ccdmb/BioDendro)
 [![PyPI version](https://badge.fury.io/py/BioDendro.svg)](https://badge.fury.io/py/BioDendro)
 
+<div align="center">
+    <img src="https://github.com/ccdmb/BioDendro/blob/master/images/banner.png" alt="banner" width="300" />
+</div>
 
 ## Background
 
 - Project owner: Catherine Rawlinson (PhD candidate)
 - Email: catherine.rawlinson@postgrad.curtin.edu.au
 
+
+BioDendro is a metabolomics package and workflow that enables analysts to flexibly cluster
+and interrogate thousands of MS/MS spectra and quickly identify the core fragment
+patterns causing groupings.
+This helps identify potential functional properties of components based on core
+chemical backbones of a larger class, even when the individual metabolite of
+interest is not found in public databases.
+
+BioDendro takes raw MS/MS data in MGF format, and a component list.
+The components list is the total of analytes within your sample set in the following format...
+
+```
+SampleID_userinfo_userinfo_m/z_RT
+```
+
+With retention time (RT) in units of minutes.
+For example:
+
+```
+Sample1_pos_C18_123.1234_5.60
+Sample2_pos_C19_321.4321_10.60
+```
+
+This can be generated using [XCMS](https://xcmsonline.scripps.edu/landing_page.php?pgcontent=mainPage), [MZmine2](http://mzmine.github.io/), or proprietary instument vendor software.
+
 Converts MGF format and component list into non-redundant list.
 Component-analyte list is converted into a data matrix and analytes are dynamically binned and clustered.
 
-## Install on Linux or Mac from the command line
 
-Installing is easiest with pip.
-Assuming you have python3 installed you can run the following to install.
+## Requirements
+
+- Python version 3.5 or more recent.
+- The python packages numpy, pandas, scipy, matplotlib, plotly, xlrd, xlsxwriter, and pillow (Installed automatically).
+- We recommend running the pipeline in [Jupyter notebooks](https://jupyter.org/), and provide example notebooks.
+
+BioDendro is tested to run with Python 3.5-3.7, Plotly 3.8 and 3.9, and Pandas 0.23 and 0.24.
+Other versions may work.
+
+
+## Install on Windows
+
+A detailed guide to installing Anaconda Python, Jupyter, and BioDendro on Windows operating systems is provided in a separate file.
+Advanced users with some knowledge of Python may also use the command line installation instructions below.
+
+
+## Install from the command line
+
+BioDendro can be installed with [pip](https://pip.pypa.io/en/stable/).
+Assuming you have Python 3 installed you can run the following to install.
 
 ```bash
 python3 -m pip install --user biodendro
@@ -36,7 +81,19 @@ Note however that this is generally discouraged.
 sudo python3 -m pip install biodendro
 ```
 
-To install the latest and greatest version, you can use [git](https://git-scm.com/) to install directly from the repository.
+To run the Jupyter notebooks, you'll also need to install jupyter.
+
+```bash
+python3 -m pip install --user jupyter
+```
+
+Both the `BioDendro` script and the python package will now be available to use (assuming Python is configured correctly).
+
+Note that the above commands will not download the example notebooks or data.
+You can download those files separately, or download the whole repository as recommended in the windows install guide.
+
+
+To install the latest and greatest version or to fetch the notebooks and data, you can use [git](https://git-scm.com/) to install directly from the repository.
 
 ```bash
 python3 -m pip install --user git+https://github.com/CurtinIC/BioDendro.git
@@ -47,13 +104,8 @@ git clone git@github.com:CurtinIC/BioDendro.git && cd BioDendro
 python3 -m pip install --user .
 ```
 
-Both the `BioDendro` script and the python package will now be available to use (assuming Python is configured correctly).
+Alternatively you can download a zipped release of the repository from <https://github.com/ccdmb/BioDendro/releases>.
 
-To run the Jupyter notebooks, you'll also need to install jupyter.
-
-```bash
-python3 -m pip install --user jupyter
-```
 
 ## Quick Start - Python library
 
