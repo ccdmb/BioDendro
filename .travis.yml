@@ -1,0 +1,24 @@
+dist: xenial
+language: python
+python:
+- '3.5'
+- '3.6'
+- '3.7'
+install:
+- pip install pandas${PANDAS_VERSION} plotly${PLOTLY_VERSION}
+- pip install .[test]
+script:
+- pytest
+env:
+- PANDAS_VERSION=">=0.24.0"
+- PANDAS_VERSION=">=0.23.0,<0.24.0"
+- PLOTLY_VERSION=">=3.9.0"
+- PLOTLY_VERSION=">=3.8.0,<3.9.0"
+deploy:
+  provider: pypi
+  user: darcyabjones
+  password:
+    secure: Dl/WisvM567eQVHTXH8i/uxkrS3iO8tuooOck+h8tgOqrvc1caPJ55m84u2FnXHisLc1Ds60zzke7SnWBCsfNYEStWy0RLQarpkEsrh8NTtYzksltREordPix5OCRdd+QeOQ6gX0dQPi688H/Bff5abEatSaSxvDA+1wfxhw0SE7fjyvSs+fgixs+zxLOwbiVv61QPcd3x+B2oEH++mzpBUfOePjQlPG8YvCJ6KAWgMkBE1KhIJEE+UEWXsQLsAgknB/kiucHGL6wxL7NwUv+LYXfuhSUfYhtF709bsbiTR2FFhUzygZR9z7VFBd5VfWU0CqreqZmK+4R3XlffnlcUfyM2uDjh7vLo7LjJN1tuEIxOToW255QxjuyeFAHeO/VHm7HiuShEdmTEq5t1zk/k6WfynLMYJ6SVElUBnUdYCOtRlSUruj1hFJ/akUHU9krZrI8kjGX3DVxS1GoOMuZhP1h809EEIQStZQ7eRlm+lCHkejxJ3SbUooM6fRRwis8bQxzMzRWFANuGBk5W2YhZLD5eQD2I1LjEjhZRqI7MmahYbYcgzGExQOzoCJxaA7fHuJ5maohLUEP8iUYTdl5VyN84tAms+XYGm/1/UXjLln0tuNj4aN7VV2VACHNVvLHlKM6luzj/ME0uxZmY4h9Mrb6XZKPSm+f+efeGtDjMs=
+  on:
+    tags: true
+  skip_existing: true

@@ -2,6 +2,7 @@ env
 **/__pycache__
 .eggs
 .ipynb_checkpoints
+.tox
 
 BioDendro.egg-info/
 .pytest_cache
@@ -18,3 +19,4 @@ BioDendro.egg-info/
 !longer-workflow.ipynb
 !quick-start-example.ipynb
 !Fireflies_feature_list.txt
+!images/banner.png

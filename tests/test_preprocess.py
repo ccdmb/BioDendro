@@ -60,7 +60,7 @@ def test_MGFRecord__get_ion(sample, expected):
 
 @pytest.mark.parametrize("sample,expected", [
     (
-        ['TITLE=File: "\\Mac\Home\Desktop\TEMP\QE_2017_001814.raw"; SpectrumID: "2"; scans: "2"',
+        ['TITLE=File: "\\Mac\\Home\\Desktop\\TEMP\\QE_2017_001814.raw"; SpectrumID: "2"; scans: "2"',
          'PEPMASS=102.03323 33553618.00000',
          'CHARGE=2+',
          'RTINSECONDS=0',
@@ -69,7 +69,7 @@ def test_MGFRecord__get_ion(sample, expected):
          '58.06568 37828.7',
          '60.04488 38341.2'],
         MGFRecord(
-            title='File: "\\Mac\Home\Desktop\TEMP\QE_2017_001814.raw"; SpectrumID: "2"; scans: "2"',
+            title='File: "\\Mac\\Home\\Desktop\\TEMP\\QE_2017_001814.raw"; SpectrumID: "2"; scans: "2"',
             retention=0,
             pepmass=Ion(102.03323, 33553618.0),
             charge="2+",
@@ -101,7 +101,7 @@ def test_MGFRecord__get_ion(sample, expected):
             )
     ),
     ])
-def test_MGFRecord__read(sample,expected):
+def test_MGFRecord__read(sample, expected):
     actual = MGFRecord._read(sample)
 
     assert actual.title == expected.title
@@ -119,7 +119,7 @@ def test_MGFRecord__read(sample,expected):
         [
             'MASS=Monoisotopic',
             'BEGIN IONS',
-            'TITLE=File: "\\Mac\Home\Desktop\TEMP\QE_2017_001814.raw"; SpectrumID: "2"; scans: "2"',
+            'TITLE=File: "\\Mac\\Home\\Desktop\\TEMP\\QE_2017_001814.raw"; SpectrumID: "2"; scans: "2"',
             'PEPMASS=102.03323 33553618.00000',
             'CHARGE=2+',
             'RTINSECONDS=0',
@@ -140,7 +140,7 @@ def test_MGFRecord__read(sample,expected):
         ],
         [
             MGFRecord(
-                title='File: "\\Mac\Home\Desktop\TEMP\QE_2017_001814.raw"; SpectrumID: "2"; scans: "2"',
+                title='File: "\\Mac\\Home\\Desktop\\TEMP\\QE_2017_001814.raw"; SpectrumID: "2"; scans: "2"',
                 retention=0,
                 pepmass=Ion(102.03323, 33553618.0),
                 charge="2+",
@@ -227,7 +227,7 @@ def test_SampleRecord_parse(sample, expected):
 # Test standalone methods
 
 @pytest.mark.parametrize("sample,expected", [
-    ('File: "\\Mac\Home\Desktop\TEMP\QE_2017_001814.raw"; SpectrumID: "2"; scans: "2"', "QE_2017_001814"),
+    ('File: "\\Mac\\Home\\Desktop\\TEMP\\QE_2017_001814.raw"; SpectrumID: "2"; scans: "2"', "QE_2017_001814"),
     (r'File: "/home/user/test_name.raw"; SpectrumID: "3"', "test_name")
     ])
 def test_split_msms_title(sample, expected):
