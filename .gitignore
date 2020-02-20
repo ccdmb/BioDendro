@@ -9,4 +9,12 @@ BioDendro.egg-info/
 *.png
 *.xlsx
 *params.txt
+*.txt
 *.html
+*.ipynb
+*.mgf
+
+!Fireflies_MSMS.mgf
+!longer-workflow.ipynb
+!quick-start-example.ipynb
+!Fireflies_feature_list.txt
