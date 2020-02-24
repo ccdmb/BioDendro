@@ -4,9 +4,10 @@
 
 [![Build Status](https://travis-ci.org/ccdmb/BioDendro.svg?branch=master)](https://travis-ci.org/ccdmb/BioDendro)
 [![PyPI version](https://badge.fury.io/py/BioDendro.svg)](https://badge.fury.io/py/BioDendro)
+[![Anaconda-Server Badge](https://anaconda.org/darcyabjones/biodendro/badges/version.svg)](https://anaconda.org/darcyabjones/biodendro)
 
 <div align="center">
-    <img src="https://github.com/ccdmb/BioDendro/blob/master/images/banner.png" alt="banner" width="300" />
+    <img src="https://github.com/ccdmb/BioDendro/blob/master/images/banner.png" alt="" width="300" />
 </div>
 
 ## Background
@@ -61,16 +62,16 @@ Advanced users with some knowledge of Python may also use the command line insta
 
 ## Install from the command line
 
-BioDendro can be installed from [PyPI](https://pypi.org/project/BioDendro) using [pip](https://pip.pypa.io/en/stable/), or from [anaconda](https://anaconda.org/darcyabjones/BioDendro) using [conda](https://docs.conda.io/en/latest/).
+BioDendro can be installed from [PyPI](https://pypi.org/project/BioDendro) using [pip](https://pip.pypa.io/en/stable/), or from [anaconda](https://anaconda.org/darcyabjones/biodendro) using [conda](https://docs.conda.io/en/latest/).
 
-Users that are less familiar with Python and pip are recommended to read our [INSTALLING_WITH_PIP.md](INSTALLING_WITH_PIP.md) document which explains things in more detail, including where things will be installed and how to use virtual environments.
+Users that are less familiar with Python and pip are recommended to read our [INSTALLING_WITH_PIP.md](https://github.com/ccdmb/BioDendro/blob/master/INSTALLING_WITH_PIP.md) document which explains things in more detail, including where things will be installed and how to use virtual environments.
 For details on installing and using conda, see their [getting-started guide](https://docs.conda.io/projects/conda/en/latest/user-guide/overview.html).
 
 
 Assuming you have Python 3 installed you can install BioDendro and its dependencies using the pip:
 
 ```bash
-python3 -m pip install --user biodendro
+python3 -m pip install --user BioDendro
 
 # Only required if you're using the provided notebooks
 python3 -m pip install --user jupyter
@@ -80,7 +81,7 @@ python3 -m pip install --user jupyter
 To install BioDendro and dependencies using conda (assuming you have installed Anaconda):
 
 ```bash
-conda install -c darcyabjones BioDendro
+conda install -c darcyabjones biodendro
 
 # Only required if you're using the provided notebooks
 conda install jupyter
@@ -112,11 +113,11 @@ tree = BioDendro.pipeline(
 From there you could analyse the results stored in the `tree` object.
 The example jupyter notebooks contain more detailed explanations of different parameters.
 
-[quick-start-example.ipynb](quick-start-example.ipynb) contains basic information about running the pipelines.
+[quick-start-example.ipynb](https://github.com/ccdmb/BioDendro/blob/master/quick-start-example.ipynb) contains basic information about running the pipelines.
 
-[longer-workflow.ipynb](longer-workflow.ipynb) contains more detailed information about how the pipeline works, and how you can modify parameters.
+[longer-workflow.ipynb](https://github.com/ccdmb/BioDendro/blob/master/longer-workflow.ipynb) contains more detailed information about how the pipeline works, and how you can modify parameters.
 
-We suggest that beginners download the quick-start notebook [available here](https://github.com/ccdmb/BioDendro/raw/master/quick-start-example.ipynb) (Right-click, save-as) and modify parameters and files as necessary.
+We suggest that beginners download the [quick-start notebook available here](https://github.com/ccdmb/BioDendro/raw/master/quick-start-example.ipynb) (Right-click, save-as) and modify parameters and files as necessary.
 
 
 ## Quick Start - command line
