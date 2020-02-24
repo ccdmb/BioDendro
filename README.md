@@ -55,56 +55,43 @@ Other versions may work.
 
 ## Install on Windows
 
-A detailed guide to installing Anaconda Python, Jupyter, and BioDendro on Windows operating systems is provided in a separate file.
+A detailed guide to installing Anaconda Python, Jupyter, and BioDendro on Windows operating systems is provided in a [separate pdf file](https://github.com/ccdmb/BioDendro/blob/master/Download%20and%20install%20instructions%20for%20BioDendro%20using%20Windows%2010.pdf).
 Advanced users with some knowledge of Python may also use the command line installation instructions below.
 
 
 ## Install from the command line
 
-BioDendro can be installed with [pip](https://pip.pypa.io/en/stable/).
-Assuming you have Python 3 installed you can run the following to install.
+BioDendro can be installed from [PyPI](https://pypi.org/project/BioDendro) using [pip](https://pip.pypa.io/en/stable/), or from [anaconda](https://anaconda.org/darcyabjones/BioDendro) using [conda](https://docs.conda.io/en/latest/).
+
+Users that are less familiar with Python and pip are recommended to read our [INSTALLING_WITH_PIP.md](INSTALLING_WITH_PIP.md) document which explains things in more detail, including where things will be installed and how to use virtual environments.
+For details on installing and using conda, see their [getting-started guide](https://docs.conda.io/projects/conda/en/latest/user-guide/overview.html).
+
+
+Assuming you have Python 3 installed you can install BioDendro and its dependencies using the pip:
 
 ```bash
 python3 -m pip install --user biodendro
-```
 
-The `--user` flag tells pip to install to a user directory rather than a system directory.
-Generally this will be under `~/.local` for Mac and Linux.
-Make sure that `~/.local/bin` is added to your `$PATH` if this is the case ([see here](https://stackoverflow.com/questions/14637979/how-to-permanently-set-path-on-linux-unix) for tips on modifying your path).
-
-For more advanced users, we recommend using a [virtual environment](https://virtualenv.pypa.io/en/stable/) or [conda environment](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html) to avoid conflicting package versions.
-
-To install as root, you can omit `--user`.
-Note however that this is generally discouraged.
-
-```bash
-sudo python3 -m pip install biodendro
-```
-
-To run the Jupyter notebooks, you'll also need to install jupyter.
-
-```bash
+# Only required if you're using the provided notebooks
 python3 -m pip install --user jupyter
 ```
 
-Both the `BioDendro` script and the python package will now be available to use (assuming Python is configured correctly).
+
+To install BioDendro and dependencies using conda (assuming you have installed Anaconda):
+
+```bash
+conda install -c darcyabjones BioDendro
+
+# Only required if you're using the provided notebooks
+conda install jupyter
+```
+
+
+Both the `BioDendro` script and the python package (which can be used with the notebooks) should now be available to use.
 
 Note that the above commands will not download the example notebooks or data.
 You can download those files separately, or download the whole repository as recommended in the windows install guide.
 
-
-To install the latest and greatest version or to fetch the notebooks and data, you can use [git](https://git-scm.com/) to install directly from the repository.
-
-```bash
-python3 -m pip install --user git+https://github.com/CurtinIC/BioDendro.git
-
-# or
-
-git clone git@github.com:CurtinIC/BioDendro.git && cd BioDendro
-python3 -m pip install --user .
-```
-
-Alternatively you can download a zipped release of the repository from <https://github.com/ccdmb/BioDendro/releases>.
 
 
 ## Quick Start - Python library
@@ -115,17 +102,21 @@ To run the full pipeline in python.
 ```python
 import BioDendro
 
-tree = BioDendro.pipeline("MSMS.mgf", "component_list.txt", results_dir="my_results_dir")
+tree = BioDendro.pipeline(
+    "Fireflies_MSMS.mgf",
+    "Fireflies_feature_list.txt",
+    results_dir="my_results_dir"
+)
 ```
 
-From there you could analyse the results stored in `tree`.
+From there you could analyse the results stored in the `tree` object.
 The example jupyter notebooks contain more detailed explanations of different parameters.
 
 [quick-start-example.ipynb](quick-start-example.ipynb) contains basic information about running the pipelines.
 
-[longer-example.ipynb](longer-example.ipynb) contains more detailed information about how the pipeline works, and how you can modify parameters.
+[longer-workflow.ipynb](longer-workflow.ipynb) contains more detailed information about how the pipeline works, and how you can modify parameters.
 
-A template notebook [available here](https://github.com/ccdmb/BioDendro/raw/master/quick-start.ipynb) (Right-click, save-as) is provided to help beginners get started.
+We suggest that beginners download the quick-start notebook [available here](https://github.com/ccdmb/BioDendro/raw/master/quick-start-example.ipynb) (Right-click, save-as) and modify parameters and files as necessary.
 
 
 ## Quick Start - command line

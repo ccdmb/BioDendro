@@ -1,0 +1,54 @@
+{% set name = "BioDendro" %}
+{% set url = "https://github.com/ccdmb/BioDendro" %}
+{% set description = "A package to cluster metabolomics data and plot dendrograms." %}
+
+{% set data = load_setup_py_data() %}
+
+package:
+  name: "{{ name | lower }}"
+  version: "{{ data['version'] }}"
+
+source:
+  path: "../"
+
+build:
+  entry_points:
+    - BioDendro=BioDendro:main
+  script: "{{ PYTHON }} setup.py install --single-version-externally-managed --record=record.txt"
+
+requirements:
+  host:
+    - python {{ python }}
+    - pip
+  run:
+    - python
+    - numpy
+    - scipy
+    - pandas
+    - matplotlib
+    - xlrd
+    - xlsxwriter
+    - plotly
+    - pillow
+
+test:
+  imports:
+    - BioDendro
+    - test
+  commands:
+    - BioDendro --help
+
+about:
+  home: "{{ url }}"
+  license: BSD
+  license_family: BSD
+  license_file: "LICENSE"
+  summary: "{{ description }}"
+  doc_url: "{{ url }}"
+  dev_url: "{{ url }}"
+
+extra:
+  maintainers:
+    - Darcy Jones <darcy.a.jones@postgrad.curtin.edu.au>
+  recipe-maintainers:
+    - darcyabjones

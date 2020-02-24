@@ -1,11 +1,23 @@
-env
+env/**
+dist/**
+build/**
+
 **/__pycache__
-.eggs
 .ipynb_checkpoints
 .tox
-
-BioDendro.egg-info/
+.cache
+.mypy_cache
 .pytest_cache
+
+*.egg-info/
+*.egg
+*.py[cod]
+__pycache__/
+*.so
+*~
+.eggs/**
+
+conda-build/build
 
 *.png
 *.xlsx
