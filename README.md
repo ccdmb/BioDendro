@@ -1,6 +1,6 @@
 # BioDendro
 
-**A package to cluster metabolomics data, and plot dendrograms**
+**A package to cluster and visualise MS/MS spectral data**
 
 [![Build Status](https://travis-ci.org/ccdmb/BioDendro.svg?branch=master)](https://travis-ci.org/ccdmb/BioDendro)
 [![PyPI version](https://badge.fury.io/py/BioDendro.svg)](https://badge.fury.io/py/BioDendro)
