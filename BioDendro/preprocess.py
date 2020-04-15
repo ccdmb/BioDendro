@@ -5,24 +5,29 @@ Preprocess contains methods for parsing and manipulating mass spec files.
 import os
 import re
 from bisect import bisect_left
-from collections import namedtuple
+
+from typing import NamedTuple
+from typing import Sequence, Iterable, List
+from typing import Optional
 
 import pandas as pd
 
 
 # Named tuple to represent ions and pepmass in MGF
-Ion = namedtuple("Ion", ["mz", "intensity"])
+class Ion(NamedTuple):
+    mz: float
+    intensity: Optional[float]
 
 
 class MGF(object):
     """ """
 
-    def __init__(self, records):
-        self.records = records
+    def __init__(self, records: Sequence["MGFRecord"]) -> None:
+        self.records = list(records)
         self.mzs = [r.pepmass.mz for r in records]
         return
 
-    def __str__(self):
+    def __str__(self) -> str:
         cls = self.__class__.__name__
         template = "{}(records=[\n{}\n{}])"
         n_to_display = 5
@@ -33,11 +38,17 @@ class MGF(object):
             trailing
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self)
 
     @classmethod
-    def parse(cls, handle, scaling=False, filtering=False, eps=0.0):
+    def parse(
+        cls,
+        handle: Iterable[str],
+        scaling: bool = False,
+        filtering: bool = False,
+        eps: float = 0.0
+    ) -> "MGF":
         records = MGFRecord.parse(
             handle,
             scaling=scaling,
@@ -47,7 +58,13 @@ class MGF(object):
         records.sort(key=lambda x: x.pepmass.mz)
         return cls(records)
 
-    def closest(self, mz, retention, mz_tol, retention_tol):
+    def closest(
+        self,
+        mz: float,
+        retention: float,
+        mz_tol: float,
+        retention_tol: float
+    ) -> Optional["MGFRecord"]:
         """ Find the closest trigger match to a mz and retention value.
 
         Keyword arguments:
@@ -104,37 +121,41 @@ class MGFRecord(object):
     """ Represents single MGF records intended to be used in a list. """
 
     def __init__(
-            self,
-            title,
-            retention,
-            pepmass,
-            charge=None,
-            ions=[],
-            ):
+        self,
+        title: str,
+        retention: float,
+        pepmass: Ion,
+        charge: Optional[str] = None,
+        ions: Optional[Sequence[Ion]] = None,
+    ) -> None:
         self.title = title
         self.retention = retention
         self.pepmass = pepmass
         self.charge = charge
-        self.ions = ions
+
+        if ions is None:
+            self.ions: List[Ion] = []
+        else:
+            self.ions = list(ions)
         return
 
-    def __str__(self):
+    def __str__(self) -> str:
         cls = self.__class__.__name__
         template = ("{}(title='{}', retention={}, pepmass={}, "
                     "charge='{}', ions={})")
         return template.format(cls, self.title, self.retention, self.pepmass,
                                self.charge, self.ions)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self)
 
     @staticmethod
-    def _split_kvline(key, string):
+    def _split_kvline(key: str, string: str) -> str:
         """ Takes a field key and string, removes the key and equals sign """
         return string[len(key) + 1:].strip()
 
     @classmethod
-    def _get_title(cls, string, key="TITLE"):
+    def _get_title(cls, string: str, key: str = "TITLE") -> str:
         """ Process the title field.
 
         Note there is no standard for storing metadata in here, so specialised
@@ -143,41 +164,46 @@ class MGFRecord(object):
         return cls._split_kvline(key, string)
 
     @classmethod
-    def _get_pepmass(cls, string, key="PEPMASS"):
+    def _get_pepmass(cls, string: str, key: str = "PEPMASS") -> Ion:
         """ Strips key from mass and returns an Ion object. """
         pepmass = cls._split_kvline(key, string)
         return cls._get_ion(pepmass)
 
     @classmethod
-    def _get_retention(cls, string, key="RTINSECONDS"):
+    def _get_retention(cls, string: str, key: str = "RTINSECONDS") -> float:
         """ Get the retention time in seconds back. """
         rtinseconds = cls._split_kvline(key, string)
         return float(rtinseconds)
 
     @classmethod
-    def _get_charge(cls, string, key="CHARGE"):
+    def _get_charge(cls, string: str, key: str = "CHARGE") -> str:
         """ Not fully implemented. Just basic support. """
         return cls._split_kvline(key, string)
 
     @classmethod
-    def _get_ion(cls, string):
+    def _get_ion(cls, string: str) -> Ion:
         """ Convert a string into an Ion named tuple. """
-        string = string.split()
+        sstring = string.split()
 
-        mz = float(string[0].strip())
+        mz = float(sstring[0].strip())
 
         # Intensity/peak area field is optional.
         if len(string) > 1:
-            intensity = float(string[1].strip())
+            intensity: Optional[float] = float(sstring[1].strip())
         else:
             intensity = None
         # NB any other values in here are ignored by specification.
         return Ion(mz, intensity)
 
     @staticmethod
-    def _get_altered_ions(ions, scaling, filtering, eps=0.0):
+    def _get_altered_ions(
+        ions: Sequence[Ion],
+        scaling: bool,
+        filtering: bool,
+        eps: float = 0.0
+    ) -> List[Ion]:
         if not scaling and not filtering:
-            return ions  # Nothing is done
+            return list(ions)  # Nothing is done
 
         # extract the flattened mz and intensities as lists
         mzs = []
@@ -191,13 +217,15 @@ class MGFRecord(object):
 
             if i.intensity is not None:
                 all_none = False
+            else:
+                continue
 
             if i.intensity > max_inten:
                 max_inten = i.intensity
 
         # Can't do anything without intensities.
         if all_none:
-            return ions
+            return list(ions)
 
         if scaling:
             if max_inten > 0.0:
@@ -228,7 +256,14 @@ class MGFRecord(object):
         return ret_ions
 
     @classmethod
-    def _read(cls, lines, scaling=False, filtering=False, eps=0.0):
+    def _read(
+        cls,
+        lines: Iterable[str],
+        scaling: bool = False,
+        filtering: bool = False,
+        eps: float = 0.0
+    ) -> "MGFRecord":
+
         title = None
         retention = None
         pepmass = None
@@ -264,10 +299,20 @@ class MGFRecord(object):
                 eps=eps
             )
 
+        assert title is not None
+        assert retention is not None
+        assert pepmass is not None
+        # charge is allowed to be None
         return cls(title, retention, pepmass, charge, ret_ions)
 
     @classmethod
-    def parse(cls, handle, scaling=False, filtering=False, eps=0.0):
+    def parse(
+        cls,
+        handle: Iterable[str],
+        scaling: bool = False,
+        filtering: bool = False,
+        eps: float = 0.0
+    ) -> List["MGFRecord"]:
         """ Parses an MGF file into a list of MGF objects.
 
         keyword arguments:
@@ -277,7 +322,7 @@ class MGFRecord(object):
         output = []
 
         in_block = False
-        block = []
+        block: List[str] = []
         for line in handle:
             if line.startswith("END"):
                 output.append(
@@ -301,7 +346,7 @@ class MGFRecord(object):
         return output
 
 
-def split_msms_title(line):
+def split_msms_title(line: str) -> str:
     """ Split a title line into a useful format. """
 
     regex = re.compile(r"\\|/")
@@ -316,7 +361,12 @@ def split_msms_title(line):
 
 class SampleRecord(object):
 
-    def __init__(self, mz, retention, original):
+    def __init__(
+        self,
+        mz: float,
+        retention: float,
+        original: str
+    ) -> None:
         """ A simple class to store 'real samples'. """
         self.mz = mz
         self.retention = retention
@@ -324,7 +374,7 @@ class SampleRecord(object):
         return
 
     @classmethod
-    def _read(cls, line, sep="_"):
+    def _read(cls, line: str, sep: str = "_") -> "SampleRecord":
         """ Read a line and construct new object. """
         sline = line.strip().split(sep)
 
@@ -336,7 +386,7 @@ class SampleRecord(object):
         return cls(mz, retention, line.strip())
 
     @classmethod
-    def parse(cls, handle):
+    def parse(cls, handle: Iterable[str]) -> List["SampleRecord"]:
         """ Parse lines in a file-like object and return list of objects. """
 
         output = []
@@ -350,17 +400,22 @@ class SampleRecord(object):
 
         return output
 
-    def __str__(self):
+    def __str__(self) -> str:
         cls = self.__class__.__name__
         template = "{}(mz={}, retention={}, original='{}')"
         return template.format(cls, self.mz, self.retention, self.original)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self)
 
 
-def remove_redundancy(samples, mgf, mz_tol=0.002, retention_tol=5,
-                      neutral=False):
+def remove_redundancy(
+    samples: Sequence[SampleRecord],
+    mgf: MGF,
+    mz_tol: float = 0.002,
+    retention_tol: float = 5,
+    neutral: bool = False
+) -> pd.DataFrame:
     """ Selects the closest trigger mass to the real sample mass
     Prints the best trigger id and ion list
     """

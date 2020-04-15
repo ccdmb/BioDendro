@@ -6,27 +6,35 @@ from itertools import repeat
 from copy import deepcopy
 import re
 
+from typing import Tuple
+from typing import Sequence, List
+from typing import Optional, Any
+from typing import Dict, Mapping
+
 from plotly.graph_objs import graph_objs
 
 import numpy as np
 from scipy.cluster import hierarchy as sph
 
+from BioDendro.cluster import Tree
+
 
 def dendrogram(
-    tree,
-    orientation='bottom',
-    colorscale=None,
-    width=np.inf,
-    height=np.inf,
-    xaxis='xaxis',
-    yaxis='yaxis',
-    title=None,
-    xlabel=None,
-    ylabel=None,
-    hovertext=None,
-    margin_scalar=12,
-):
-    layout = {xaxis: {}, yaxis: {}}
+    tree: Tree,
+    orientation: str = 'bottom',
+    colorscale: Optional[Sequence[str]] = None,
+    width: float = np.inf,
+    height: float = np.inf,
+    xaxis: str = 'xaxis',
+    yaxis: str = 'yaxis',
+    title: Optional[str] = None,
+    xlabel: Optional[str] = None,
+    ylabel: Optional[str] = None,
+    hovertext: List[Any] = None,
+    margin_scalar: float = 12,
+) -> graph_objs.Figure:
+
+    layout: Dict[Any, Any] = {xaxis: {}, yaxis: {}}
     if title is not None:
         layout["title"] = title
 
@@ -53,7 +61,7 @@ def dendrogram(
     yvals_flat = yvals.flatten()
     xvals_flat = xvals.flatten()
 
-    zero_vals = {x for x, y in zip(xvals_flat, yvals_flat) if y == 0.0}
+    zero_vals = list({x for x, y in zip(xvals_flat, yvals_flat) if y == 0.0})
 
     if len(zero_vals) > len(yvals) + 1:
         # If the length of zero_vals is larger than the length of yvals,
@@ -72,8 +80,6 @@ def dendrogram(
 
         # Regenerating the leaves pos from the zero_vals with equal intervals.
         zero_vals = list(correct_leaves_pos)
-    else:
-        zero_vals = list(zero_vals)
 
     zero_vals.sort()
     layout = _figure_layout(
@@ -136,7 +142,7 @@ def _format_cluster_hovertexts(data, layout, cluster_map):
     return out
 
 
-def _get_sign(orientation, xaxis, yaxis):
+def _get_sign(orientation: str, xaxis: str, yaxis: str) -> Dict[str, int]:
     """ Helper to find multiplicative factors to get rotations right. """
 
     sign = {xaxis: 1, yaxis: 1}
@@ -153,7 +159,7 @@ def _get_sign(orientation, xaxis, yaxis):
     return sign
 
 
-def _get_color_dict(colorscale=None):
+def _get_color_dict(colorscale: Optional[List[str]] = None) -> Dict[str, str]:
     """ Returns colorscale used for dendrogram tree clusters.
 
     Keyword arguments:
@@ -196,16 +202,16 @@ def _get_color_dict(colorscale=None):
 
 
 def _get_traces(
-    hierarchy,
-    labels,
-    threshold,
-    orientation,
-    sign,
-    xaxis,
-    yaxis,
-    hovertext=None,
-    colorscale=None,
-):
+    hierarchy: np.array,
+    labels: Sequence[str],
+    threshold: float,
+    orientation: str,
+    sign: Mapping[str, int],
+    xaxis: str,
+    yaxis: str,
+    hovertext: List[Any] = None,
+    colorscale: Sequence[str] = None,
+) -> Tuple[List[Dict[Any, Any]], np.array, np.array, List[str], List[int]]:
     """ Format the dendrogram nodes/clades as edges in graph. """
 
     # Scipy does most of the heavy lifting.
@@ -233,7 +239,7 @@ def _get_traces(
     xs = sign[xaxis] * xs
     ys = sign[yaxis] * ys
 
-    ordered_labels = dendro["ivl"]
+    ordered_labels: List[str] = dendro["ivl"]
 
     if hovertext is None:
         # Infinite generator of None values.
@@ -243,10 +249,18 @@ def _get_traces(
     colors = [color_map[k] for k in dendro["color_list"]]
     traces = _trace_as_scatter(xs, ys, colors, hovertext, xaxis, yaxis)
 
-    return traces, icoords, dcoords, ordered_labels, dendro["leaves"]
+    leaves: List[int] = dendro["leaves"]
+    return traces, icoords, dcoords, ordered_labels, leaves
 
 
-def _trace_as_scatter(xs, ys, colors, hovertext, xaxis, yaxis):
+def _trace_as_scatter(
+    xs: np.array,
+    ys: np.array,
+    colors: Sequence[str],
+    hovertext: Sequence[str],
+    xaxis: str,
+    yaxis: str
+) -> List[Dict[Any, Any]]:
     """ Formats the values from the scipy dendro as a list of plotly
     compatible dicts. There will be converted into Scatter objects by Figure."
     """

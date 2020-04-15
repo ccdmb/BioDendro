@@ -5,7 +5,13 @@ of mass spec data.
 
 from os.path import join as pjoin
 
+from typing import Sequence
+from typing import Optional, Any
+from typing import Tuple
+from typing import Dict
+
 import numpy as np
+import pandas as pd
 from scipy.cluster.hierarchy import linkage
 from scipy.cluster.hierarchy import fcluster
 
@@ -26,12 +32,12 @@ class Tree(object):
 
     def __init__(
         self,
-        threshold=8e-4,
-        clustering_method="jaccard",
-        cutoff=0.6,
-        sample_col="component",
-        mz_col="mz",
-    ):
+        threshold: float = 8e-4,
+        clustering_method: str = "jaccard",
+        cutoff: float = 0.6,
+        sample_col: str = "component",
+        mz_col: str = "mz",
+    ) -> None:
         """ Constructs a tree object to bin and cluster mass spectra.
 
         Keyword arguments:
@@ -52,7 +58,7 @@ class Tree(object):
 
         return
 
-    def fit(self, df):
+    def fit(self, df: pd.DataFrame) -> None:
         """ Bins the data and generates the tree.
 
         Keyword arguments:
@@ -74,7 +80,7 @@ class Tree(object):
         return
 
     @staticmethod
-    def _bin_name(arr):
+    def _bin_name(arr: np.array) -> str:
         return "{:.4f}_{:.4f}_{:.4f}".format(
             np.around(np.mean(arr), 4),
             np.around(np.min(arr), 4),
@@ -82,7 +88,7 @@ class Tree(object):
         )
 
     @staticmethod
-    def _bin_starts(arr, threshold):
+    def _bin_starts(arr: np.array, threshold: float) -> np.array:
         """ Find starts of bins in a sorted array.
         Not intended for public use.
 
@@ -165,7 +171,11 @@ class Tree(object):
         return bins
 
     @staticmethod
-    def _pivot(df, bins, index_col):
+    def _pivot(
+        df: pd.DataFrame,
+        bins: Sequence[str],
+        index_col: str
+    ) -> pd.DataFrame:
         """ Construct a one-hot encoded dataframe of samples vs bins.
 
         Given any dataframe with samples, construct a wide form dataframe
@@ -180,11 +190,11 @@ class Tree(object):
         """
 
         df["present"] = True
-        df["bins"] = bins
+        df["bins"] = np.array(bins)
         return df.pivot_table(index=index_col, columns="bins",
                               values="present", fill_value=False)
 
-    def _bin(self, threshold=None):
+    def _bin(self, threshold: Optional[float] = None) -> None:
         """ Get names of the bins and assign to mz rows.
 
         Keyword arguments:
@@ -210,7 +220,7 @@ class Tree(object):
         self.onehot_df = self._pivot(df, bins, self.sample_col)
         return
 
-    def _hclust(self, clustering_method=None):
+    def _hclust(self, clustering_method: Optional[str] = None) -> None:
         """ Hierarchically cluster the one hot encoded dataframe.
 
         Keyword arguments:
@@ -232,7 +242,7 @@ class Tree(object):
                             metric=clustering_method)
         return
 
-    def cut_tree(self, cutoff=None):
+    def cut_tree(self, cutoff: Optional[float] = None) -> None:
         """ Selects clusters from the clustered tree based on distance.
 
         Keyword arguments:
@@ -258,7 +268,12 @@ class Tree(object):
         return
 
     @staticmethod
-    def _plot_bin_freqs(df, height=4.5, width_base=1, width_multiplier=0.2):
+    def _plot_bin_freqs(
+        df: pd.DataFrame,
+        height: float = 4.5,
+        width_base: float = 1,
+        width_multiplier: float = 0.2
+    ) -> Tuple[matplotlib.Figure, matplotlib.Axis]:
         """ Plots barchart frequencies of mz bins in a cluster.
 
         Keyword arguments:
@@ -293,13 +308,13 @@ class Tree(object):
         return fig, ax
 
     @staticmethod
-    def _exclude_false_columns(table):
+    def _exclude_false_columns(table: pd.DataFrame) -> pd.DataFrame:
         """ Filter out columns that are all false. """
 
         # any(axis=0) at least on sample has True value for each column.
         return table.loc[:, table.any(axis=0)]
 
-    def write_summaries(self, path="results"):
+    def write_summaries(self, path: str = "results") -> None:
         """ Write summary tables and plots to a directory.
 
         Keyword arguments:
@@ -342,7 +357,11 @@ class Tree(object):
         df.to_excel(filename)
         return
 
-    def cluster_table(self, cluster=None, sample=None):
+    def cluster_table(
+        self,
+        cluster: Optional[str] = None,
+        sample: Optional[str] = None
+    ):
         """ Return a table of presence-absence metabolites for a given cluster.
         """
 
@@ -361,11 +380,11 @@ class Tree(object):
 
     def cluster_hist(
         self,
-        cluster=None,
-        sample=None,
-        height=5,
-        width_base=1,
-        width_multiplier=0.15
+        cluster: Optional[str] = None,
+        sample: Optional[str] = None,
+        height: float = 5,
+        width_base: float = 1,
+        width_multiplier: float = 0.15
     ):
         """ Plot a histogram of metabolite frequencies in the data. """
 
@@ -375,12 +394,12 @@ class Tree(object):
 
     def plot(
         self,
-        filename=None,
-        width=900,
-        height=800,
-        fontsize=12,
-        auto_open=True,
-    ):
+        filename: Optional[str] = None,
+        width: float = 900,
+        height: float = 800,
+        fontsize: float = 12,
+        auto_open: float = True,
+    ) -> Dict[Any, Any]:
         """ Plots an interactive tree from these data using plotly.
 
         Keyword arguments:
