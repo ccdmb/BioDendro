@@ -4,7 +4,7 @@ set -eu
 
 mkdir -p build
 
-PY_VERSIONS="3.6 3.7 3.8"
+PY_VERSIONS="3.7 3.8 3.9"
 
 for PY_VERSION in ${PY_VERSIONS}
 do
