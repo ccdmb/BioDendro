@@ -4,16 +4,18 @@ python:
 - '3.5'
 - '3.6'
 - '3.7'
+- '3.8'
 install:
 - pip install pandas${PANDAS_VERSION} plotly${PLOTLY_VERSION}
 - pip install .[test]
 script:
 - pytest
 env:
-- PANDAS_VERSION=">=0.24.0"
-- PANDAS_VERSION=">=0.23.0,<0.24.0"
-- PLOTLY_VERSION=">=3.9.0"
-- PLOTLY_VERSION=">=3.8.0,<3.9.0"
+- PANDAS_VERSION=">=1.12"
+- PANDAS_VERSION=">=1.1,<1.2"
+- PANDAS_VERSION=">=1.0,<1.1"
+- PLOTLY_VERSION=">=4.0.0"
+- PLOTLY_VERSION=">=3.9.0,<4.0.0"
 deploy:
   provider: pypi
   user: __token__

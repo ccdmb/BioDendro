@@ -15,7 +15,8 @@ from scipy.cluster import hierarchy as sph
 def dendrogram(
     tree,
     orientation='bottom',
-    colorscale=None,
+    colorscale="tab20",
+    non_cluster_colour="black",
     width=np.inf,
     height=np.inf,
     xaxis='xaxis',
@@ -48,6 +49,7 @@ def dendrogram(
         yaxis=yaxis,
         hovertext=hovertext,
         colorscale=colorscale,
+        non_cluster_colour=non_cluster_colour,
     )
 
     yvals_flat = yvals.flatten()
@@ -153,28 +155,35 @@ def _get_sign(orientation, xaxis, yaxis):
     return sign
 
 
-def _get_color_dict(colorscale=None):
+def _mpl_cmap_to_str(name):
+    from matplotlib import pyplot as plt
+
+    cmap = plt.get_cmap(name)
+    quantised = [
+        (round(r * 255), round(g * 255), round(b * 255))
+        for r, g, b
+        in cmap.colors
+    ]
+    return [f"rgb({r},{g},{b})" for r, g, b in quantised]
+
+def _replace_dendro_colours(
+    colours,
+    above_threshold_colour="C0",
+    non_cluster_colour="black",
+    colorscale=None
+):
     """ Returns colorscale used for dendrogram tree clusters.
 
     Keyword arguments:
     colorscale -- Colors to use for the plot in rgb format.
         Should have 8 colours.
     """
+    from itertools import cycle
 
-    # These are the color codes returned for dendrograms
-    # We're replacing them with nicer colors
-    default_colors = [
-        ('b', "blue"),
-        ('c', "cyan"),
-        ('g', "green"),
-        ('k', "black"),
-        ('m', "magenta"),
-        ('r', "red"),
-        ('w', "white"),
-        ('y', "yellow"),
-    ]
 
-    if colorscale is None:
+    if isinstance(colorscale, str):
+        colorscale = _mpl_cmap_to_str(colorscale)
+    elif colorscale is None:
         colorscale = [
             'rgb(0,116,217)',  # instead of blue
             'rgb(35,205,205)',  # cyan
@@ -185,14 +194,20 @@ def _get_color_dict(colorscale=None):
             'rgb(255,255,255)',  # white
             'rgb(255,220,0)',  # yellow
         ]
+    else:
+        assert isinstance(colorscale, (list, tuple)), \
+            "colorscale must be a list or tuple of strings"
 
-    mapped_colors = {
-        k: o
-        for (k, v), o
-        in zip(default_colors, colorscale)
-    }
+        assert all(isinstance(c, str) for c in colorscale), \
+            "colorscale must be a list or tuple of strings"
 
-    return mapped_colors
+    original_colours = set(colours)
+    original_colours.remove(above_threshold_colour)
+    colour_map = dict(zip(original_colours, cycle(colorscale)))
+
+    colour_map[above_threshold_colour] = non_cluster_colour
+
+    return [colour_map[c] for c in colours]
 
 
 def _get_traces(
@@ -204,7 +219,9 @@ def _get_traces(
     xaxis,
     yaxis,
     hovertext=None,
-    colorscale=None,
+    above_threshold_colour="C0",
+    non_cluster_colour="black",
+    colorscale="tab20",
 ):
     """ Format the dendrogram nodes/clades as edges in graph. """
 
@@ -214,7 +231,8 @@ def _get_traces(
         orientation=orientation,
         labels=labels,
         no_plot=True,
-        color_threshold=threshold
+        color_threshold=threshold,
+        above_threshold_color=above_threshold_colour,
     )
 
     icoords = np.array(dendro["icoord"])
@@ -239,9 +257,21 @@ def _get_traces(
         # Infinite generator of None values.
         hovertext = repeat(None)
 
-    color_map = _get_color_dict(colorscale)
-    colors = [color_map[k] for k in dendro["color_list"]]
-    traces = _trace_as_scatter(xs, ys, colors, hovertext, xaxis, yaxis)
+    colours = _replace_dendro_colours(
+        dendro["color_list"],
+        above_threshold_colour,
+        non_cluster_colour,
+        colorscale,
+    )
+
+    traces = _trace_as_scatter(
+        xs,
+        ys,
+        colours,
+        hovertext,
+        xaxis,
+        yaxis
+    )
 
     return traces, icoords, dcoords, ordered_labels, dendro["leaves"]
 
